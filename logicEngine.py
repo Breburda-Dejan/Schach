@@ -368,7 +368,7 @@ def calculate_valid_moves(pieces: list[Piece], piece_to_move: Piece, player: Pla
         "queen": queen,
         "king": king
     }
-    valid_moves.extend(str_to_function_mapper.get(piece_to_move.type.lower(), lambda: [])(piece_to_move, pieces))  # -> calls the function with the pieces type-name
+    valid_moves.extend(str_to_function_mapper.get(piece_to_move.type.lower(), lambda: [])(piece_to_move, pieces))
 
     blocked_moves.extend([piece.position for piece in player.pieces])
     valid_moves = clean_moves(valid_moves).copy()
