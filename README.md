@@ -16,8 +16,10 @@ Well, i will do it anyway. Without using any AI btw.
 - [x] Check for Possible moves that would result in check, and filter them
 - [x] Implement En-Passant
 - [x] Implement Castle
-- [ ] Check for Checkmate
+- [x] Check for Checkmate
 - [ ] Check for Draw
   - [ ] Check for Draw by unsufficient material
   - [ ] Check for Draw by being unable to move
   - [ ] Check for Draw by repetition
+
+  

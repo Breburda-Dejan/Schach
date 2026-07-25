@@ -1,7 +1,7 @@
 import math
 from unittest import case
 
-from ui import Piece, Player
+from ui import Piece, Player,INITIAL_PIECE_POSITION
 import re
 
 
@@ -47,7 +47,7 @@ def validate_move(player:Player, pieces, move: str) -> int:
     return 0, piece_to_move, end_move
 
 
-def validate_line(line: list[dict[str, int]], pieces, color, is_pawn=False) -> list[dict[str, int]]:
+def validate_line(line: list[dict[str, int]], pieces, color, is_pawn: bool=False) -> list[dict[str, int]]:
     '''
     This function will validate a list of positions ( that are in a straight line ).
     It will go through the list one by one, check if its empty, or if there is a piece and rather it's the same color or not.
@@ -274,9 +274,19 @@ def clean_moves(moves: list[dict[str, int]]) -> list[dict[str, int]]:
 
 
 def check_if_player_can_castle(player: Player, pieces: list[Piece], move: str) -> (int,Piece,dict[str,int]):
+    '''
+    This checks if the player can castle by checking if the path between king and rook is clear, there is no ongoing
+    checks, there is no check on the squares where the king has to go through or land. It also checks if both rook and king
+    haven't moved since the beginning of the game
+
+    :param player: the player that requested the check.
+    :param pieces: list of all pieces on the board
+    :param move: move-notation from the input of the player. o-o-o for long-castle, o-o for short-castle
+    :return:
+    '''
     is_long_castle = "o-o-o" == move.lower()
 
-    if is_my_king_in_check(player.king,pieces,player):
+    if is_my_king_in_check(player.king,pieces,player)[0]:
         return 55, None, None
 
     for piece in player.pieces:
@@ -300,52 +310,57 @@ def check_if_player_can_castle(player: Player, pieces: list[Piece], move: str) -
         return 53,None,None
 
     for pos in corrected_line_of_sight[:2]:
-        if would_be_check_after_move(pieces,player,player.king,pos):
+        if would_be_check_after_move(pieces,player,player.king,pos)[0]:
             return 54,None,None
 
     player.king.valid_positions.append(corrected_line_of_sight[1])
     return 0, player.king, corrected_line_of_sight[1]
 
 
-def is_my_king_in_check(king: Piece, pieces: list[Piece], player: Player) -> bool:
+def is_my_king_in_check(king: Piece, pieces: list[Piece], player: Player) -> tuple[bool,Piece]:
     '''
     This will check if the king, or any Piece-object given in the king-param, is attacked ( in check ). by shooting out lasers in evry direction
     a queen and knight can move and checking if there is a Piece, that could range the original spot of the Piece (king).
 
     :param king: Piece-object of the King to check
     :param pieces: list of all pieces on the board
-    :return: a boolean that indicates if the King is in check, or not (True if yes, False if no)
+    :return: a boolean that indicates if the King is in check, or not (True if yes, False if no) and the piece that's attacking
     '''
+
+
     king_pos_list = [king.position["file"], king.position["rank"]]
     line_of_sight_of_king = queen(king, pieces)  # reusing this, because it is already checking all squares in sight, except knight moves.
     line_of_sight_of_king.extend(knight(king, pieces))  # this should include all the possible knigt moves
+    pos_to_piece_map: dict[any, Piece] = {f"{piece.position["file"]}-{piece.position["rank"]}": piece for piece in pieces}
+
 
     cleaned_line_of_sight_moves = remove_positions_of_own_pieces(clean_moves(line_of_sight_of_king),
                                                                  [piece.position for piece in pieces if piece.color == king.color])
 
+
     for pos in cleaned_line_of_sight_moves:
-        piece_on_pos = player.game.get_piece_on_position(pos)
+        piece_on_pos = pos_to_piece_map.get(f"{pos["file"]}-{pos["rank"]}")
         if piece_on_pos == None:
             continue
         pos_list = [pos["file"], pos["rank"]]
-        raw_vektor = [y - x for x, y in zip(king_pos_list, pos_list)]
-        vektor = [abs(value) for value in raw_vektor]
-        if vektor in [[1, 2], [2, 1]]:  # is knight
+        raw_vector = [y - x for x, y in zip(king_pos_list, pos_list)]
+        vector = [abs(value) for value in raw_vector]
+        if vector in [[1, 2], [2, 1]]:  # is knight
             if piece_on_pos.type.lower() == "knight":
-                return True
-        elif vektor[0] == vektor[1]:
+                return True,piece_on_pos
+        elif vector[0] == vector[1]:
             if piece_on_pos.type.lower() in ["bishop", "queen"]:
-                return True
-        elif vektor[0] == 0 or vektor[1] == 0:
+                return True,piece_on_pos
+        elif vector[0] == 0 or vector[1] == 0:
             if piece_on_pos.type.lower() in ["rook", "queen"]:
-                return True
-        elif raw_vektor[1] == (1, -1)[piece_on_pos.is_black] and raw_vektor[0] != 0:
+                return True,piece_on_pos
+        elif raw_vector[1] == (1, -1)[piece_on_pos.is_black] and raw_vector[0] != 0:
             if piece_on_pos.type.lower() == "pawn":
-                return True
-    return False
+                return True,piece_on_pos
+    return False,None
 
 
-def would_be_check_after_move(pieces: list[Piece], player: Player, piece_to_move: Piece, move: dict[str, int]) -> bool:
+def would_be_check_after_move(pieces: list[Piece], player: Player, piece_to_move: Piece, move: dict[str, int]) -> tuple[bool,Piece]:
     '''
     creates a temporary duplicate of the board, that moves any given piece to any given spot, and checks if this position would result in a check
     for the king.
@@ -354,10 +369,17 @@ def would_be_check_after_move(pieces: list[Piece], player: Player, piece_to_move
     :param player: Player-object of the player requesting this check.
     :param piece_to_move: Piece-object of the Piece to move on this temporary board.
     :param move: position that the piece_to_move should move to.
-    :return: a boolean that indicates if this move would result in check, or not (True if yes, False if not)
+    :return: a boolean that indicates if this move would result in check, or not (True if yes, False if not) and the piece that would be attacking
     '''
     temp_pieces = []
     king = None
+    remove_after_copy = False # just a flag so I know when to delete the extra piece
+
+
+    if piece_to_move.position == INITIAL_PIECE_POSITION:
+        remove_after_copy = True
+        pieces.append(piece_to_move)
+
     for piece in pieces:
         temp_pos = piece.position
         if piece.position == move:
@@ -366,15 +388,123 @@ def would_be_check_after_move(pieces: list[Piece], player: Player, piece_to_move
             temp_pos = move
         temp_pieces.append(Piece(piece.piece_id, temp_pos))
 
-    for temp_piece in temp_pieces:
-        if temp_piece.type.lower() == "king" and temp_piece.color == player.color:
-            king = temp_piece
-            break
+    if remove_after_copy:
+        pieces.remove(piece_to_move)
+
+
+    if piece_to_move.type.lower() == "king":
+        king = [piece for piece in temp_pieces if piece.position == move][0]
+    else:
+        for temp_piece in temp_pieces:
+            if temp_piece.type.lower() == "king" and temp_piece.color == player.color:
+                king = temp_piece
+                break
+
 
     if king == None:
+        return False,None
+
+    in_check,attacker = is_my_king_in_check(king, temp_pieces, player)
+
+    for temp_piece in temp_pieces:
+        del temp_piece
+    del temp_pieces
+
+    return in_check,attacker
+
+
+def what_squares_to_defend(king: Piece, vector: list[int], attacker: Piece) -> list[dict[str,int]]:
+    '''
+    This is just to help finding out which squares are left that can be defended against a check
+
+    :param king: Piece-object of the king from the player that requested the check
+    :param vector: vector from king to attacker position
+    :param attacker: Piece-object of the attacker that attacks the king
+    :return: list of possible squares that can be jumped on to defend against the check
+    '''
+    defend_squares = []
+
+    if attacker.type.lower() == "knight":
+        defend_squares.append(attacker.position)
+        return defend_squares
+
+    direction_v = [0,0]
+
+    if not 0 in vector:
+        direction_v[0] = vector[0]/abs(vector[0])
+        direction_v[1] = vector[1]/abs(vector[1])
+    else:
+        if vector[0] == 0:
+            direction_v[1] = vector[1]/abs(vector[1])
+        else:
+            direction_v[0] = vector[0] / abs(vector[0])
+
+    for i in range(max(abs(vector[0]),abs(vector[1]))):
+        i += 1
+        temp_pos = {"file": king.position["file"]+i*direction_v[0],"rank": king.position["rank"] + i*direction_v[1]}
+        defend_squares.append(temp_pos)
+
+    return defend_squares
+
+
+def is_this_checkmate(pieces: list[Piece],player: Player) -> bool:
+    '''
+    This function checks if the player is checkmate, by checking if the king could move, or if any piece
+    could block the ongoing check.
+
+    :param pieces: list of all pieces on the board
+    :param player: player that requested the check
+    :return: A boolean that indicates rather its checkmate or not (True if yes, False if no)
+    '''
+
+    ### First of all, lets check if the king is evan in check
+
+    if not is_my_king_in_check(player.king,pieces,player)[0]:
         return False
 
-    return is_my_king_in_check(king, temp_pieces, player)
+    ### Now lets see if the king can escape the check
+
+    dumb_king_escapes = king(player.king,pieces)
+    somehow_smarter_king_escapes = remove_positions_of_own_pieces(dumb_king_escapes,player.pieces)
+    smartest_king_escapes = []
+    for escape_pos in somehow_smarter_king_escapes:
+        if not would_be_check_after_move(pieces,player,player.king,escape_pos)[0]:
+            smartest_king_escapes.append(escape_pos)
+
+    if len(smartest_king_escapes) > 0:
+        return False
+
+    ### Well that's bitter, king can't escape... can someone block though?
+    ### What evan is attacking my king, and where is it?
+    _,attacker = is_my_king_in_check(player.king,pieces,player)
+    vector = player.king.calculate_vector(attacker.position)
+
+    defend_squares = what_squares_to_defend(player.king,vector,attacker)
+
+    temp_player = Player(("b","w")[player.king.is_black],[])
+
+    dumb_check_blocks: list[list[dict[str,int]]] = []
+
+    for pos in defend_squares:
+        opposite_king = Piece(("B-K", "W-K")[player.king.is_black])
+        can_block,piece_that_blocks = would_be_check_after_move(pieces,temp_player,opposite_king,pos)
+        if can_block:
+            temp_moves = [piece_that_blocks.position.copy(),pos.copy()]
+            dumb_check_blocks.append(temp_moves.copy())
+        del opposite_king
+
+    ### well we have pieces that can block now, but what if there is check after the piece moves to block?
+
+    for positions in dumb_check_blocks:
+        piece_that_blocks = player.game.get_piece_on_position(positions[0])
+        if piece_that_blocks.type.lower() == "king":
+            continue
+        if not would_be_check_after_move(pieces,player,piece_that_blocks,positions[1])[0]:
+            return False
+
+    ### finally, if king can't move and nothing can block, it's checkmate ( if I didn't miss anything ... )
+    print("ITS CHECKMATE")
+    return True
 
 
 def remove_positions_of_own_pieces(moves: list[dict[str, int]], positions_of_own_pieces: list[dict[str, int]]) -> list[dict[str, int]]:
@@ -412,12 +542,10 @@ def calculate_valid_moves(pieces: list[Piece], piece_to_move: Piece, player: Pla
     blocked_moves.extend([piece.position for piece in player.pieces])
     valid_moves = clean_moves(valid_moves).copy()
 
-    #### CHECK FOR CHECKS OR WAYS TO BLOCK CHECKS ... ####
-    is_check = is_my_king_in_check(player.king, pieces, player)
+    ### CHECK FOR CHECKS OR WAYS TO BLOCK CHECKS ...
     for move in valid_moves:
-        if would_be_check_after_move(pieces, player, piece_to_move, move):
+        if would_be_check_after_move(pieces, player, piece_to_move, move)[0]:
             blocked_moves.append(move)
-    ######################################################
 
     return remove_positions_of_own_pieces(valid_moves, blocked_moves)
 

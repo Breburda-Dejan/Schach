@@ -1,7 +1,7 @@
-import logic
-import ui
 
 
+def test():
+    return False,"test"
 
 
 
@@ -10,4 +10,6 @@ import ui
 
 
 if __name__ == '__main__':
-    ...
+    print(test())
+    print(test()[0])
+    print(test()[1])

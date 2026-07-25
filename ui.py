@@ -49,7 +49,7 @@ class Piece:
 
 
     def __str__(self):
-        return self.piece_id
+        return f"{self.name=}, {self.position=}, {self.color=}, {self.is_start=}"
 
     def set_game(self,game:ChessBoard):
         '''
@@ -174,11 +174,11 @@ test_position = {
     8:{1:"B-R",2:"B-N",3:"B-B",4:"B-Q",5:"B-K",6:"B-B",7:"B-N",8:"B-R"},
     7:{1:"B-P",2:"B-P",3:"B-P",4:"B-P",5:"B-P",6:"B-P",7:"B-P",8:"B-P"},
     6:{1:"   ",2:"   ",3:"   ",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
-    5:{1:"   ",2:"   ",3:"   ",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
-    4:{1:"   ",2:"B-B",3:"B-B",4:"   ",5:"B-B",6:"   ",7:"   ",8:"   "},
-    3:{1:"   ",2:"   ",3:"W-P",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
-    2:{1:"W-P",2:"W-P",3:"   ",4:"   ",5:"W-P",6:"W-P",7:"W-P",8:"W-P"},
-    1:{1:"W-R",2:"   ",3:"   ",4:"   ",5:"W-K",6:"   ",7:"   ",8:"W-R"}
+    5:{1:"   ",2:"   ",3:"W-B",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
+    4:{1:"   ",2:"   ",3:"B-B",4:"   ",5:"B-R",6:"B-R",7:"   ",8:"   "},
+    3:{1:"   ",2:"B-B",3:"   ",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
+    2:{1:"W-P",2:"W-P",3:"   ",4:"   ",5:"   ",6:"   ",7:"W-P",8:"W-P"},
+    1:{1:"W-R",2:"B-N",3:"   ",4:"   ",5:"W-K",6:"   ",7:"   ",8:"W-R"}
 }
 
 
@@ -189,6 +189,7 @@ class Player:
     '''
     def __init__(self,color,pieces):
         self.color = color
+        self.name = ("Player white","Player black")[self.color == "b"]
         self.is_turn = False
         self.is_in_check = False
         self.did_castle = False
@@ -198,7 +199,10 @@ class Player:
         self.pieces:list[Piece] = [piece for piece in pieces if piece.color == self.color]
         for piece in self.pieces:
             piece.player = self
-        self.king:Piece = [piece for piece in self.pieces if piece.type == "king"][0]
+        try:
+            self.king:Piece = [piece for piece in self.pieces if piece.type == "king"][0]
+        except IndexError:
+            self.king:Piece = None
 
 
 class ChessBoard:
@@ -298,6 +302,10 @@ G7-G5
             if return_code != 0:
                 continue
             self.current_Player = (self.player1,self.player2)[self.current_Player == self.player1]
+            self.run = not LE.is_this_checkmate(self.pieces,self.current_Player)
+
+        self.display_cli()
+        print(f"{(self.player1.name,self.player2.name)[self.current_Player == self.player1]} Won!")
 
 
 if __name__ == '__main__':
