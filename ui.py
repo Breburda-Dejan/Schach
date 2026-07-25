@@ -45,6 +45,7 @@ class Piece:
         self.en_passant_able_on_count = -1
         self.valid_positions:list[dict] = []
         self.position = position.copy()
+        self.start_position = self.position.copy()
 
 
     def __str__(self):
@@ -59,6 +60,12 @@ class Piece:
         '''
         self.game = game
 
+    def calculate_vector(self,end_position: dict[str,int]):
+        new_position_list = [end_position["file"], end_position["rank"]]
+        current_position_list = [self.position["file"], self.position["rank"]]
+        vector = [x - y for x, y in zip(new_position_list, current_position_list)]
+        return vector
+
     def set_position(self,new_position:dict[str,int],piece_on_new_position:Piece = None,count:int=-1) -> int:
         '''
         this function will set the position the Piece to the new position giving in the param [new_position].
@@ -71,20 +78,35 @@ class Piece:
         '''
         try:
             if (new_position not in self.valid_positions or not [True, True] == [0<=v<=8 for v in new_position.values()]) and new_position != INITIAL_PIECE_POSITION:
+                print(new_position)
+                print(self.valid_positions)
                 raise Exception("not-a-valid-position")
             if piece_on_new_position != None:
                 if piece_on_new_position.color != self.color:
                     piece_on_new_position.kill()
+
+
             elif self.type.lower()=="pawn": # this block checks if the move was an en-passant ( hopefully )
                 direction = (1,-1)[self.is_black]
-                new_position_list = [new_position["file"],new_position["rank"]]
-                current_position_list = [self.position["file"],self.position["rank"]]
-                vector = [x - y for x,y in zip(new_position_list,current_position_list)]
-                if not 0 in vector: # it was an en-passant ( i think ...)
+                vector = self.calculate_vector(new_position)
+                if not 0 in vector: # it was an en-passant ( I think ...)
                     pos_of_en_passanted_pawn = {"file":current_position_list[0]+vector[0],"rank":current_position_list[1]}
                     en_passanted_pawn:Piece = self.game.get_piece_on_position(pos_of_en_passanted_pawn)
                     if en_passanted_pawn != None and en_passanted_pawn.en_passant_able_on_count == self.game.count - 1 and en_passanted_pawn.color != self.color:
                         en_passanted_pawn.kill()
+
+
+            elif self.type.lower() == "king":
+                vector = self.calculate_vector(new_position)
+                if abs(vector[0]) == 2 and vector[1] == 0: # this would mean castle!
+                    if vector[0] > 0:
+                        rook: Piece = self.game.get_piece_on_position({"file":8,"rank":self.position["rank"]})
+                    else:
+                        rook: Piece = self.game.get_piece_on_position({"file": 1, "rank": self.position["rank"]})
+                    rook.position["file"] = new_position["file"]-(int(vector[0]/2))
+                    rook.position["rank"] = new_position["rank"]
+                    print(rook.position)
+                    rook.is_start = False
 
             if self.is_start and new_position["rank"] in [4,5]:
                 self.en_passant_able_on_count = count
@@ -137,26 +159,26 @@ class Piece:
 
 # This map holds the initial Game-position by putting the Piece-IDs into any fields
 initial_position = {
-    8:{1:"B-R",2:"B-N",3:"B-B",4:"B-Q",5:"B-K",6:"B-B",7:"B-N",8:"B-R"},
-    7:{1:"B-P",2:"B-P",3:"B-P",4:"B-P",5:"B-P",6:"B-P",7:"B-P",8:"B-P"},
-    6:{1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:""},
-    5:{1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:""},
-    4:{1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:""},
-    3:{1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:""},
-    2:{1:"W-P",2:"W-P",3:"W-P",4:"W-P",5:"W-P",6:"W-P",7:"W-P",8:"W-P"},
-    1:{1:"W-R",2:"W-N",3:"W-B",4:"W-Q",5:"W-K",6:"W-B",7:"W-N",8:"W-R"}
+    8: {1: "B-R", 2: "B-N", 3: "B-B", 4: "B-Q", 5: "B-K", 6: "B-B", 7: "B-N", 8: "B-R"},
+    7: {1: "B-P", 2: "B-P", 3: "B-P", 4: "B-P", 5: "B-P", 6: "B-P", 7: "B-P", 8: "B-P"},
+    6: {1: "   ", 2: "   ", 3: "   ", 4: "   ", 5: "   ", 6: "   ", 7: "   ", 8: "   "},
+    5: {1: "   ", 2: "   ", 3: "   ", 4: "   ", 5: "   ", 6: "   ", 7: "   ", 8: "   "},
+    4: {1: "   ", 2: "   ", 3: "   ", 4: "   ", 5: "   ", 6: "   ", 7: "   ", 8: "   "},
+    3: {1: "   ", 2: "   ", 3: "   ", 4: "   ", 5: "   ", 6: "   ", 7: "   ", 8: "   "},
+    2: {1: "W-P", 2: "W-P", 3: "W-P", 4: "W-P", 5: "W-P", 6: "W-P", 7: "W-P", 8: "W-P"},
+    1: {1: "W-R", 2: "W-N", 3: "W-B", 4: "W-Q", 5: "W-K", 6: "W-B", 7: "W-N", 8: "W-R"}
 }
 
 # This is a Testing position for debugging, so I don't have to play through a normal chess-game in order to test one feature
 test_position = {
     8:{1:"B-R",2:"B-N",3:"B-B",4:"B-Q",5:"B-K",6:"B-B",7:"B-N",8:"B-R"},
     7:{1:"B-P",2:"B-P",3:"B-P",4:"B-P",5:"B-P",6:"B-P",7:"B-P",8:"B-P"},
-    6:{1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:""},
-    5:{1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:""},
-    4:{1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:"B-B"},
-    3:{1:"",2:"",3:"",4:"",5:"",6:"",7:"",8:""},
-    2:{1:"W-P",2:"W-P",3:"W-P",4:"W-P",5:"W-P",6:"",7:"W-P",8:"W-P"},
-    1:{1:"W-R",2:"W-N",3:"W-B",4:"W-Q",5:"W-K",6:"W-B",7:"W-N",8:"W-R"}
+    6:{1:"   ",2:"   ",3:"   ",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
+    5:{1:"   ",2:"   ",3:"   ",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
+    4:{1:"   ",2:"B-B",3:"B-B",4:"   ",5:"B-B",6:"   ",7:"   ",8:"   "},
+    3:{1:"   ",2:"   ",3:"W-P",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
+    2:{1:"W-P",2:"W-P",3:"   ",4:"   ",5:"W-P",6:"W-P",7:"W-P",8:"W-P"},
+    1:{1:"W-R",2:"   ",3:"   ",4:"   ",5:"W-K",6:"   ",7:"   ",8:"W-R"}
 }
 
 
@@ -173,7 +195,7 @@ class Player:
         self.can_castle = False
         self.run = False
         self.game:ChessBoard = None
-        self.pieces = [piece for piece in pieces if piece.color == self.color]
+        self.pieces:list[Piece] = [piece for piece in pieces if piece.color == self.color]
         for piece in self.pieces:
             piece.player = self
         self.king:Piece = [piece for piece in self.pieces if piece.type == "king"][0]
@@ -189,7 +211,7 @@ class ChessBoard:
         for rank in initial_position:
             for file in initial_position[rank]:
                 piece_id = initial_position[rank][file]
-                if piece_id == "":
+                if piece_id == "" or piece_id == "   ":
                     continue
                 piece = Piece(piece_id,{"file":file,"rank":rank})
                 piece.set_game(self)
@@ -257,7 +279,9 @@ G7-G5
             self.count += 1
             return piece_to_move.set_position(where_to_move,piece_on_new_position=self.get_piece_on_position(where_to_move),count=self.count)
         else:
+            print()
             print(error_lookup(return_code))
+            print()
             return return_code
 
 
@@ -270,7 +294,8 @@ G7-G5
         self.run=True
         while self.run:
             self.display_cli()
-            if self.wait_for_cli_input() != 0:
+            return_code = self.wait_for_cli_input()
+            if return_code != 0:
                 continue
             self.current_Player = (self.player1,self.player2)[self.current_Player == self.player1]
 

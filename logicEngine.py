@@ -1,7 +1,7 @@
 import math
 from unittest import case
 
-from ui import Piece, Player, game
+from ui import Piece, Player
 import re
 
 
@@ -29,6 +29,8 @@ def validate_move(player:Player, pieces, move: str) -> int:
     :param move: input of the user. format: [a-h][1-8]-[a-h][1-8]
     :return: error_code, Piece-object of the piece that the player wants to move, Move that the Piece should move to.
     '''
+    if move.lower() in ["o-o","o-o-o"]:
+        return check_if_player_can_castle(player,pieces,move)
     valid_move_pattern = r"[a-h][1-8]-[a-h][1-8]"
     if not re.match(valid_move_pattern, move):
         return 32, None, None
@@ -271,7 +273,41 @@ def clean_moves(moves: list[dict[str, int]]) -> list[dict[str, int]]:
     return cleaned_moves
 
 
-def is_my_king_in_check(king: Piece, pieces: list[Piece]) -> bool:
+def check_if_player_can_castle(player: Player, pieces: list[Piece], move: str) -> (int,Piece,dict[str,int]):
+    is_long_castle = "o-o-o" == move.lower()
+
+    if is_my_king_in_check(player.king,pieces,player):
+        return 55, None, None
+
+    for piece in player.pieces:
+        if piece.type.lower() == "king" and not piece.is_start:
+            return 51,None,None
+        if piece.type.lower() == "rook" and piece.start_position["file"] == (8,1)[is_long_castle] and not piece.is_start:
+            return 52,None,None
+
+    line_of_sight_from_king_to_rook: list[dict[str,int]] = []
+
+    posFile = player.king.position["file"]
+    posRank = player.king.position["rank"]
+    direction = (1,-1)[is_long_castle]
+    for i in range((3,4)[is_long_castle]):
+        i += 1
+        line_of_sight_from_king_to_rook.append({"file": posFile + i*direction, "rank": posRank})
+
+    corrected_line_of_sight = validate_line(line=line_of_sight_from_king_to_rook,pieces=pieces,color=("b","w")[player.king.is_black])
+
+    if len(corrected_line_of_sight) != (3,4)[is_long_castle]:
+        return 53,None,None
+
+    for pos in corrected_line_of_sight[:2]:
+        if would_be_check_after_move(pieces,player,player.king,pos):
+            return 54,None,None
+
+    player.king.valid_positions.append(corrected_line_of_sight[1])
+    return 0, player.king, corrected_line_of_sight[1]
+
+
+def is_my_king_in_check(king: Piece, pieces: list[Piece], player: Player) -> bool:
     '''
     This will check if the king, or any Piece-object given in the king-param, is attacked ( in check ). by shooting out lasers in evry direction
     a queen and knight can move and checking if there is a Piece, that could range the original spot of the Piece (king).
@@ -288,7 +324,7 @@ def is_my_king_in_check(king: Piece, pieces: list[Piece]) -> bool:
                                                                  [piece.position for piece in pieces if piece.color == king.color])
 
     for pos in cleaned_line_of_sight_moves:
-        piece_on_pos = king.game.get_piece_on_position(pos)
+        piece_on_pos = player.game.get_piece_on_position(pos)
         if piece_on_pos == None:
             continue
         pos_list = [pos["file"], pos["rank"]]
@@ -328,14 +364,17 @@ def would_be_check_after_move(pieces: list[Piece], player: Player, piece_to_move
             continue
         if piece.position == piece_to_move.position:
             temp_pos = move
-        if piece.type.lower() == "king" and piece.color == piece_to_move.color:
-            king = piece
         temp_pieces.append(Piece(piece.piece_id, temp_pos))
+
+    for temp_piece in temp_pieces:
+        if temp_piece.type.lower() == "king" and temp_piece.color == player.color:
+            king = temp_piece
+            break
 
     if king == None:
         return False
 
-    return is_my_king_in_check(king, temp_pieces)
+    return is_my_king_in_check(king, temp_pieces, player)
 
 
 def remove_positions_of_own_pieces(moves: list[dict[str, int]], positions_of_own_pieces: list[dict[str, int]]) -> list[dict[str, int]]:
@@ -374,7 +413,7 @@ def calculate_valid_moves(pieces: list[Piece], piece_to_move: Piece, player: Pla
     valid_moves = clean_moves(valid_moves).copy()
 
     #### CHECK FOR CHECKS OR WAYS TO BLOCK CHECKS ... ####
-    is_check = is_my_king_in_check(player.king, pieces)
+    is_check = is_my_king_in_check(player.king, pieces, player)
     for move in valid_moves:
         if would_be_check_after_move(pieces, player, piece_to_move, move):
             blocked_moves.append(move)

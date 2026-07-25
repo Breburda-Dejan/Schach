@@ -15,7 +15,7 @@ Well, i will do it anyway. Without using any AI btw.
 - [x] Checking if the own king is in check
 - [x] Check for Possible moves that would result in check, and filter them
 - [x] Implement En-Passant
-- [ ] Implement Castle
+- [x] Implement Castle
 - [ ] Check for Checkmate
 - [ ] Check for Draw
   - [ ] Check for Draw by unsufficient material
