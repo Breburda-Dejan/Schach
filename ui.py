@@ -47,7 +47,6 @@ class Piece:
         self.position = position.copy()
         self.start_position = self.position.copy()
 
-
     def __str__(self):
         return f"{self.name=}, {self.position=}, {self.color=}, {self.is_start=}"
 
@@ -81,43 +80,47 @@ class Piece:
                 print(new_position)
                 print(self.valid_positions)
                 raise Exception("not-a-valid-position")
-            if piece_on_new_position != None:
-                if piece_on_new_position.color != self.color:
-                    piece_on_new_position.kill()
-
-
-            elif self.type.lower()=="pawn": # this block checks if the move was an en-passant ( hopefully )
-                direction = (1,-1)[self.is_black]
-                vector = self.calculate_vector(new_position)
-                if not 0 in vector: # it was an en-passant ( I think ...)
-                    pos_of_en_passanted_pawn = {"file":current_position_list[0]+vector[0],"rank":current_position_list[1]}
-                    en_passanted_pawn:Piece = self.game.get_piece_on_position(pos_of_en_passanted_pawn)
-                    if en_passanted_pawn != None and en_passanted_pawn.en_passant_able_on_count == self.game.count - 1 and en_passanted_pawn.color != self.color:
-                        en_passanted_pawn.kill()
-
-
-            elif self.type.lower() == "king":
-                vector = self.calculate_vector(new_position)
-                if abs(vector[0]) == 2 and vector[1] == 0: # this would mean castle!
-                    if vector[0] > 0:
-                        rook: Piece = self.game.get_piece_on_position({"file":8,"rank":self.position["rank"]})
-                    else:
-                        rook: Piece = self.game.get_piece_on_position({"file": 1, "rank": self.position["rank"]})
-                    rook.position["file"] = new_position["file"]-(int(vector[0]/2))
-                    rook.position["rank"] = new_position["rank"]
-                    print(rook.position)
-                    rook.is_start = False
-
-            if self.is_start and new_position["rank"] in [4,5]:
-                self.en_passant_able_on_count = count
-            self.position["file"] = new_position["file"]
-            self.position["rank"] = new_position["rank"]
-            self.is_start = False
-            return 0
         except Exception as e:
             if str(e) == "not-a-valid-position":
                 return 32
             return 31
+
+
+        if piece_on_new_position != None:
+            if piece_on_new_position.color != self.color:
+                piece_on_new_position.kill()
+
+
+        elif self.type.lower()=="pawn": # this block checks if the move was an en-passant ( hopefully )
+            direction = (1,-1)[self.is_black]
+            vector = self.calculate_vector(new_position)
+            if not 0 in vector: # it was an en-passant ( I think ...)
+                current_position_list = [self.position["file"], self.position["rank"]]
+                pos_of_en_passanted_pawn = {"file":current_position_list[0]+vector[0],"rank":current_position_list[1]}
+                en_passanted_pawn:Piece = self.game.get_piece_on_position(pos_of_en_passanted_pawn)
+                if en_passanted_pawn != None and en_passanted_pawn.en_passant_able_on_count == self.game.count - 1 and en_passanted_pawn.color != self.color:
+                    en_passanted_pawn.kill()
+
+
+        elif self.type.lower() == "king":
+            vector = self.calculate_vector(new_position)
+            if abs(vector[0]) == 2 and vector[1] == 0: # this would mean castle!
+                if vector[0] > 0:
+                    rook: Piece = self.game.get_piece_on_position({"file":8,"rank":self.position["rank"]})
+                else:
+                    rook: Piece = self.game.get_piece_on_position({"file": 1, "rank": self.position["rank"]})
+                rook.position["file"] = new_position["file"]-(int(vector[0]/2))
+                rook.position["rank"] = new_position["rank"]
+                print(rook.position)
+                rook.is_start = False
+
+        if self.is_start and new_position["rank"] in [4,5]:
+            self.en_passant_able_on_count = count
+        self.position["file"] = new_position["file"]
+        self.position["rank"] = new_position["rank"]
+        self.is_start = False
+        return 0
+
 
     def kill(self) -> int:
         '''
@@ -126,6 +129,7 @@ class Piece:
         :return: A return_code, that either indicates everything went as expected, 0, or that something went wrong, any other number.
         '''
         self.game.pieces.remove(self)
+        self.player.pieces.remove(self)
         return 0
 
     def promote(self,promote_to_id) -> int:
@@ -211,7 +215,7 @@ class ChessBoard:
     '''
     def __init__(self):
         self.pieces = []
-        initial_position = test_position # This is for testing
+        #initial_position = test_position # This is for testing
         for rank in initial_position:
             for file in initial_position[rank]:
                 piece_id = initial_position[rank][file]
@@ -280,8 +284,10 @@ G7-G5
         move = input(f"{['White','Black'][self.current_Player == self.player2]}> ").lower()
         return_code,piece_to_move,where_to_move = LE.validate_move(self.current_Player, self.pieces, move)
         if return_code == 0: ### -1 -> this check is disabled enable by replacing with 0
-            self.count += 1
-            return piece_to_move.set_position(where_to_move,piece_on_new_position=self.get_piece_on_position(where_to_move),count=self.count)
+            return_code = piece_to_move.set_position(where_to_move,piece_on_new_position=self.get_piece_on_position(where_to_move),count=self.count)
+            if return_code == 0:
+                self.count += 1
+            return return_code
         else:
             print()
             print(error_lookup(return_code))

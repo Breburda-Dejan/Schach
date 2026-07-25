@@ -105,6 +105,7 @@ def pawn(pawn: Piece, pieces: list[Piece]) -> list[dict[str, int]]:
     ]
 
     for i, pos in enumerate(positions_list):
+        print(f"check {pos=}")
         temp_pos = {"file": pos[0], "rank": pos[1]}
         key = f"{pos[0]}-{pos[1]}"
         key_en_passant = f"{en_passant_check_list[i][0]}-{en_passant_check_list[i][1]}"
@@ -113,10 +114,12 @@ def pawn(pawn: Piece, pieces: list[Piece]) -> list[dict[str, int]]:
                 pos_to_piece_map.get(key).color != pawn.color):
             dumb_pawn_moves.append(temp_pos)
 
-        if (not pos_to_piece_map.get(key_en_passant) == None and
-                pos_to_piece_map.get(key_en_passant).en_passant_able_on_count == pawn.game.count and
-                pos_to_piece_map.get(key_en_passant).color != pawn.color):
-            dumb_pawn_moves.append(temp_pos)
+
+        en_passant_chek_pawn = pos_to_piece_map.get(key_en_passant)
+        if not en_passant_chek_pawn == None:
+            if (en_passant_chek_pawn.en_passant_able_on_count + 1 == pawn.game.count and
+                en_passant_chek_pawn.color != pawn.color):
+                dumb_pawn_moves.append(temp_pos)
 
     return dumb_pawn_moves
 
