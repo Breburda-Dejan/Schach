@@ -1,7 +1,7 @@
 import glob
 import pickle
 import re
-
+from collections import Counter
 from ui import Piece, Player, ChessBoard, INITIAL_PIECE_POSITION
 
 
@@ -730,6 +730,17 @@ def check_for_win_or_draw(game: ChessBoard) -> tuple[str,Player]:
                 return "w",players[game.player1 == player]
             else:
                 return "d",None
+
+    #check for draw by repetition
+    board_positions_to_count: list[str] =  []
+    for pieces in list(game.game_snapshots_per_count.values()):
+        simple_pos_id_string: str = ""
+        for piece in pieces:
+            simple_pos_id_string += f"{piece.position["file"]}-{piece.position["rank"]} = {piece.piece_id},"
+        board_positions_to_count.append(simple_pos_id_string)
+    count_of_positions_on_board = dict(Counter(board_positions_to_count))
+    if 3 in list(count_of_positions_on_board.values()):
+        return "d",None
 
     return "n",None
 
