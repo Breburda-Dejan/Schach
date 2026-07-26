@@ -1,7 +1,36 @@
-import math
-from unittest import case
-from ui import Piece, Player, ChessBoard, INITIAL_PIECE_POSITION, initial_position, test_position
+import glob
+import pickle
 import re
+
+from ui import Piece, Player, ChessBoard, INITIAL_PIECE_POSITION
+
+
+def load_position_from_file(game: ChessBoard,positions_from_file) -> list[Piece]:
+    '''
+    helper function to help import positions from a save_dict
+    :param game: ChessBoard that requested the load
+    :param positions_from_file: save_dict
+    :return: list of Pieces
+    '''
+    pieces: list[Piece] = []
+    for pos in list(positions_from_file.keys()):
+        if not pos.__contains__("-") and pos.isnumeric():
+            game.count = int(pos)
+            continue
+        file = int(pos.split("-")[0])
+        rank = int(pos.split("-")[1])
+        piece_id = positions_from_file[pos]["piece_id"]
+        start_position = positions_from_file[pos]["start_position"]
+        is_start = positions_from_file[pos]["is_start"]
+        en_passant_able_on_count = positions_from_file[pos]["en_passant_able_on_count"]
+        temp_piece = Piece(piece_id, {"file": file, "rank": rank})
+        temp_piece.is_start = is_start
+        temp_piece.start_position = start_position
+        temp_piece.en_passant_able_on_count = en_passant_able_on_count
+        pieces.append(temp_piece)
+
+    return pieces
+
 
 
 def exec_cmd(cmd: str,game: ChessBoard):
@@ -92,29 +121,79 @@ def exec_cmd(cmd: str,game: ChessBoard):
 
     elif cmd.startswith("/load"):
         if cmd[6:14].lower() == "position":
+            game.count = -1
             game.pieces = []
             game.player2.pieces = []
             game.player1.pieces = []
-            if cmd[15:].strip() == "default":
-                position = initial_position
-            elif cmd[15:].strip() == "test":
-                position = test_position
-            else:
-                print("not a valid position-preset")
+            name = cmd[15:].strip().lower()
+            if not f"data/saved_positions/{name}.pkl" in glob.glob("data/saved_positions/*.pkl"):
+                print("position doesn't exist...")
+                [print(position[21:-4],end=", ") for position in glob.glob("data/saved_positions/*.pkl")]
+                print()
+                return
 
-            for rank in position:
-                for file in position[rank]:
-                    piece_id = position[rank][file]
-                    if piece_id == "" or piece_id == "   ":
-                        continue
-                    piece = Piece(piece_id, {"file": file, "rank": rank})
-                    piece.set_game(game)
-                    game.pieces.append(piece)
-                    player:Player = (game.player1,game.player2)[piece.is_black]
-                    player.pieces.append(piece)
-                    if piece.type.lower() == "king":
-                        player.king = piece
+            loaded_position: dict[str,[dict[str,Any]]] = {}
+            with open(f"data/saved_positions/{name}.pkl",'rb') as load:
+                loaded_position = pickle.load(load)
+
+            pieces: list[Piece] = load_position_from_file(game,loaded_position)
+            for piece in pieces:
+                piece.set_game(game)
+                player: Player = (game.player1, game.player2)[piece.is_black]
+                piece.player = player
+                player.pieces.append(piece)
+                game.pieces.append(piece)
+                if piece.type.lower() == "king":
+                    player.king = piece
+
             print("Position set successfully")
+
+        elif cmd[6:10].lower() == "game":
+            game.count = -1
+            game.pieces = []
+            game.player2.pieces = []
+            game.player1.pieces = []
+            game.game_snapshots_per_count:dict[int,list[Piece]] = {}
+            name = cmd[11:].strip().lower()
+            if not f"data/saved_games/{name}.pkl" in glob.glob("data/saved_games/*.pkl"):
+                print("position doesn't exist...")
+                [print(position[17:-4], end=", ") for position in glob.glob("data/saved_games/*.pkl")]
+                print()
+                return
+
+            loaded_game: dict[str, [dict[str, Any]]] = {}
+            with open(f"data/saved_games/{name}.pkl", 'rb') as load:
+                loaded_game = pickle.load(load)
+
+            for count, pieces_to_load in loaded_game.items():
+                print(count)
+                game.game_snapshots_per_count[count] = load_position_from_file(game, pieces_to_load)
+
+            count_to_reset_to = int(list(game.game_snapshots_per_count.keys())[-1])
+            if count_to_reset_to in list(game.game_snapshots_per_count.keys()):
+                pieces = game.game_snapshots_per_count[count_to_reset_to].copy()
+                for piece in pieces:
+                    temp_piece = Piece(piece.piece_id, piece.position)
+                    if temp_piece.is_black:
+                        temp_piece.player = game.player2
+                    else:
+                        temp_piece.player = game.player1
+                    temp_piece.set_game(game)
+                    temp_piece.is_start = piece.is_start
+                    temp_piece.start_position = piece.start_position
+                    temp_piece.en_passant_able_on_count = piece.en_passant_able_on_count
+                    if temp_piece.type.lower() == "king":
+                        temp_piece.player.king == temp_piece
+                    temp_piece.player.pieces.append(temp_piece)
+                    game.pieces.append(temp_piece)
+
+                game.current_Player = (game.player1, game.player2)[count_to_reset_to % 2 == 0]
+                game.count = count_to_reset_to + 1
+                print(f"Successfully reset to position on count {count_to_reset_to}")
+                print("Game loaded successfully")
+                return
+
+            print("I think something went wrong while loading. mb")
 
         elif cmd[6:11].lower() == "count":
             game.pieces = []
@@ -150,6 +229,42 @@ def exec_cmd(cmd: str,game: ChessBoard):
                     return
 
             print("Something went wrong while resetting")
+
+    elif cmd.startswith("/save"):
+        if cmd[6:14].lower() == "position":
+            name = cmd[15:].strip().lower()
+            name = name.replace(" ","_")
+            save_dict:dict[str,dict[str,Any]] = {str(game.count):{}}
+            for piece in game.pieces:
+                entry = {}
+                entry["start_position"] = piece.start_position
+                entry["is_start"] = piece.is_start
+                entry["piece_id"] = piece.piece_id
+                entry["en_passant_able_on_count"] = piece.en_passant_able_on_count
+                save_dict[f"{piece.position["file"]}-{piece.position["rank"]}"] = entry
+
+            with open(f"data/saved_positions/{name}.pkl",'wb') as save:
+                pickle.dump(save_dict, save)
+                print(f"Position saved as {name}")
+
+        elif cmd[6:10].lower() == "game":
+            name = cmd[11:].strip().lower()
+            name = name.replace(" ","_")
+            save_dict:dict[int,dict[str,dict[str,Any]]] = {}
+            for count,pieces in game.game_snapshots_per_count.items():
+                positions_save_dict = {}
+                for piece in pieces:
+                    entry = {}
+                    entry["start_position"] = piece.start_position
+                    entry["is_start"] = piece.is_start
+                    entry["piece_id"] = piece.piece_id
+                    entry["en_passant_able_on_count"] = piece.en_passant_able_on_count
+                    positions_save_dict[f"{piece.position["file"]}-{piece.position["rank"]}"] = entry
+                save_dict[count] = positions_save_dict
+
+            with open(f"data/saved_games/{name}.pkl",'wb') as save:
+                pickle.dump(save_dict, save)
+                print(f"Game saved as {name}")
 
     elif cmd.startswith("/count"):
         if cmd[7:].split(" ")[0] == "set":

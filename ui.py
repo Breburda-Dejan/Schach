@@ -4,11 +4,9 @@
 #
 #   Breburda Dejan
 #####################################################################################
-import copy
-from pprint import pprint
 
-from errors import error_lookup
 import logicEngine as LE
+from errors import error_lookup
 
 settings = {
     "win_condition_check":True
@@ -193,18 +191,6 @@ initial_position = {
     1: {1: "W-R", 2: "W-N", 3: "W-B", 4: "W-Q", 5: "W-K", 6: "W-B", 7: "W-N", 8: "W-R"}
 }
 
-# This is a Testing position for debugging, so I don't have to play through a normal chess-game in order to test one feature
-test_position = {
-    8:{1:"B-R",2:"B-N",3:"B-B",4:"B-Q",5:"B-K",6:"B-B",7:"B-N",8:"B-R"},
-    7:{1:"B-P",2:"B-P",3:"B-P",4:"B-P",5:"B-P",6:"B-P",7:"B-P",8:"B-P"},
-    6:{1:"   ",2:"   ",3:"   ",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
-    5:{1:"   ",2:"   ",3:"W-B",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
-    4:{1:"   ",2:"   ",3:"B-B",4:"   ",5:"B-R",6:"B-R",7:"   ",8:"   "},
-    3:{1:"   ",2:"B-B",3:"   ",4:"   ",5:"   ",6:"   ",7:"   ",8:"   "},
-    2:{1:"W-P",2:"W-P",3:"   ",4:"   ",5:"   ",6:"   ",7:"W-P",8:"W-P"},
-    1:{1:"W-R",2:"B-N",3:"   ",4:"   ",5:"W-K",6:"   ",7:"   ",8:"W-R"}
-}
-
 
 class Player:
     '''
@@ -235,7 +221,6 @@ class ChessBoard:
     '''
     def __init__(self):
         self.pieces:list[Piece] = []
-        #initial_position = test_position # This is for testing
         for rank in initial_position:
             for file in initial_position[rank]:
                 piece_id = initial_position[rank][file]
@@ -290,8 +275,9 @@ class ChessBoard:
 
     def snapshot(self):
         '''
-        This will create a snapshot of the chessboard by creating new Piece-objects and returning them as a list
-        :return:
+        This will create a snapshot of the chessboard by creating new Piece-objects and putting them in a list.
+
+        :return: the newly created list
         '''
         temp_list: list[Piece] = []
         for piece in self.pieces:
