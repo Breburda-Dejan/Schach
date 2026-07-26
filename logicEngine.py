@@ -1,8 +1,186 @@
 import math
 from unittest import case
-
-from ui import Piece, Player,INITIAL_PIECE_POSITION
+from ui import Piece, Player, ChessBoard, INITIAL_PIECE_POSITION, initial_position, test_position
 import re
+
+
+def exec_cmd(cmd: str,game: ChessBoard):
+    '''
+    This function is used to add debug functionality by using commands that can do magic
+
+    :param cmd: string typed into the console
+    :param game: ChessBoard - object
+    :return: returns nothing
+    '''
+    pieces: list[Piece] = game.pieces
+    if cmd.startswith("/show"):
+        if "all" in cmd:
+            print("showing moves for every piece:")
+            for piece in pieces:
+                piece.valid_positions =  calculate_valid_moves(pieces,piece,piece.player).copy()
+                print(str(piece))
+        elif cmd[6:].startswith("b"):
+            print("showing valid-moves from black:")
+            for piece in game.player2.pieces:
+                piece.valid_positions =  calculate_valid_moves(pieces,piece,piece.player).copy()
+                print(str(piece))
+        elif cmd[6:].startswith("w"):
+            print("showing valid-moves from white:")
+            for piece in game.player1.pieces:
+                piece.valid_positions =  calculate_valid_moves(pieces,piece,piece.player).copy()
+                print(str(piece))
+
+    elif cmd.startswith("/move"):
+        if len(cmd[6:].strip()) == 5:
+            move = cmd[6:].strip()
+            valid_move_pattern = r"[a-h][1-8]-[a-h][1-8]"
+            if not re.match(valid_move_pattern, move):
+                print("not a valid move")
+                return
+            start_move = move.split("-")[0].lower()
+            end_move = move.split("-")[1].lower()
+            piece_to_move: Piece = game.get_piece_on_position(map_notation_to_move(start_move))
+            piece_on_end: Piece = game.get_piece_on_position(map_notation_to_move(end_move))
+
+            if piece_on_end != None:
+                piece_on_end.kill()
+
+            if piece_to_move == None:
+                print("No piece to move, do you want to /spawn?")
+                return
+
+            piece_to_move.position = map_notation_to_move(end_move)
+
+            print(f"{piece_to_move.name.capitalize()} successfully moved from {start_move} to {end_move}")
+
+    elif cmd.startswith("/spawn"):
+        if len(cmd[7:].strip()) == 6:
+            piece_id = cmd[7:10].upper()
+            if len(cmd[10:].strip()) == 2:
+                position = cmd[10:].strip()
+                valid_move_pattern = r"[a-h][1-8]"
+                if not re.match(valid_move_pattern, position):
+                    print("not a valid position")
+                    return
+            else:
+                print("not a valid position")
+                return
+            position = map_notation_to_move(position)
+
+            piece_on_position = game.get_piece_on_position(position)
+            if piece_on_position != None:
+                piece_on_position.kill()
+
+            new_piece = Piece(piece_id,position)
+            new_piece.game = game
+            new_piece.player = (game.player1,game.player2)[new_piece.is_black]
+            new_piece.player.pieces.append(new_piece)
+            if new_piece.type.lower() == "king":
+                new_piece.player.king = new_piece
+            game.pieces.append(new_piece)
+
+    elif cmd.startswith("/clear"):
+        game.pieces = []
+        game.player2.pieces = []
+        game.player1.pieces = []
+        game.player1.king = None
+        game.player2.king = None
+
+    elif cmd.startswith("/resign"):
+        game.run = False
+        print(f"{game.current_Player.name} resigned!")
+
+    elif cmd.startswith("/load"):
+        if cmd[6:14].lower() == "position":
+            game.pieces = []
+            game.player2.pieces = []
+            game.player1.pieces = []
+            if cmd[15:].strip() == "default":
+                position = initial_position
+            elif cmd[15:].strip() == "test":
+                position = test_position
+            else:
+                print("not a valid position-preset")
+
+            for rank in position:
+                for file in position[rank]:
+                    piece_id = position[rank][file]
+                    if piece_id == "" or piece_id == "   ":
+                        continue
+                    piece = Piece(piece_id, {"file": file, "rank": rank})
+                    piece.set_game(game)
+                    game.pieces.append(piece)
+                    player:Player = (game.player1,game.player2)[piece.is_black]
+                    player.pieces.append(piece)
+                    if piece.type.lower() == "king":
+                        player.king = piece
+            print("Position set successfully")
+
+        elif cmd[6:11].lower() == "count":
+            game.pieces = []
+            game.player2.pieces = []
+            game.player1.pieces = []
+            game.player1.king = None
+            game.player2.king = None
+
+            count_to_reset_to:int = cmd[12:].strip()
+
+            if count_to_reset_to.isnumeric():
+                count_to_reset_to = int(count_to_reset_to)
+                if count_to_reset_to in list(game.game_snapshots_per_count.keys()):
+                    pieces = game.game_snapshots_per_count[count_to_reset_to].copy()
+                    for piece in pieces:
+                        temp_piece = Piece(piece.piece_id,piece.position)
+                        if temp_piece.is_black:
+                            temp_piece.player = game.player2
+                        else:
+                            temp_piece.player = game.player1
+                        temp_piece.set_game(game)
+                        temp_piece.is_start = piece.is_start
+                        temp_piece.start_position = piece.start_position
+                        temp_piece.en_passant_able_on_count = piece.en_passant_able_on_count
+                        if temp_piece.type.lower() == "king":
+                            temp_piece.player.king == temp_piece
+                        temp_piece.player.pieces.append(temp_piece)
+                        game.pieces.append(temp_piece)
+
+                    game.current_Player = (game.player1,game.player2)[count_to_reset_to % 2 == 0]
+                    game.count = count_to_reset_to + 1
+                    print(f"Successfully reset to position on count {count_to_reset_to}")
+                    return
+
+            print("Something went wrong while resetting")
+
+    elif cmd.startswith("/count"):
+        if cmd[7:].split(" ")[0] == "set":
+            try:
+                game.count = int(cmd[7:].split(" ")[1].strip())
+                print(f"Game-count set to {game.count}")
+            except:
+                print("Game-count not set, there was an error!")
+
+        elif cmd[7:] == "show":
+            print(f"Current game-count: {game.count}")
+        elif cmd[7:] == "reset":
+            game.count = 0
+            print(f"Game-count set to {game.count}")
+
+    elif cmd.startswith("/info"):
+        if len(cmd[6:].strip()) == 2:
+            position = cmd[6:].strip()
+            valid_move_pattern = r"[a-h][1-8]"
+            if not re.match(valid_move_pattern, position):
+                print("not a valid position")
+                return
+            piece_on_position: Piece = game.get_piece_on_position(map_notation_to_move(position))
+            piece_on_position.valid_positions = calculate_valid_moves(game.pieces,piece_on_position,piece_on_position.player)
+            print(str(piece_on_position))
+
+
+def string_to_bool(string:str) -> bool:
+    if string.lower().startswith("f") or (string.isnumeric() and int(string) == 0):
+        return False
+    return True
 
 
 def map_notation_to_move(notation: str) -> dict[str, int]:
@@ -105,7 +283,6 @@ def pawn(pawn: Piece, pieces: list[Piece]) -> list[dict[str, int]]:
     ]
 
     for i, pos in enumerate(positions_list):
-        print(f"check {pos=}")
         temp_pos = {"file": pos[0], "rank": pos[1]}
         key = f"{pos[0]}-{pos[1]}"
         key_en_passant = f"{en_passant_check_list[i][0]}-{en_passant_check_list[i][1]}"
@@ -348,7 +525,10 @@ def is_my_king_in_check(king: Piece, pieces: list[Piece], player: Player) -> tup
         pos_list = [pos["file"], pos["rank"]]
         raw_vector = [y - x for x, y in zip(king_pos_list, pos_list)]
         vector = [abs(value) for value in raw_vector]
-        if vector in [[1, 2], [2, 1]]:  # is knight
+        if 1 in vector:
+            if piece_on_pos.type.lower() == "king":
+                return True,piece_on_pos
+        elif vector in [[1, 2], [2, 1]]:  # is knight
             if piece_on_pos.type.lower() == "knight":
                 return True,piece_on_pos
         elif vector[0] == vector[1]:
@@ -414,6 +594,29 @@ def would_be_check_after_move(pieces: list[Piece], player: Player, piece_to_move
     del temp_pieces
 
     return in_check,attacker
+
+
+def check_for_win_or_draw(game: ChessBoard) -> tuple[str,Player]:
+    '''
+    Checks for win, by checkmate, or draw, by no more valid moves.
+
+    :param game: ChessBoard - object of the game that requested the check
+    :return: string ("w","d","n") for win, draw, nothing; Player that won, else None
+    '''
+
+    players = [game.player1,game.player2]
+
+    for player in players:
+        total_valid_moves = []
+        for piece in player.pieces:
+            total_valid_moves.extend(calculate_valid_moves(game.pieces,piece,player))
+        if len(total_valid_moves) == 0:
+            if is_my_king_in_check(player.king,game.pieces,player)[0]:
+                return "w",players[game.player1 == player]
+            else:
+                return "d",None
+
+    return "n",None
 
 
 def what_squares_to_defend(king: Piece, vector: list[int], attacker: Piece) -> list[dict[str,int]]:

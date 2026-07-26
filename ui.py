@@ -4,9 +4,15 @@
 #
 #   Breburda Dejan
 #####################################################################################
+import copy
+from pprint import pprint
 
 from errors import error_lookup
 import logicEngine as LE
+
+settings = {
+    "win_condition_check":True
+}
 
 INITIAL_PIECE_POSITION = {"file":-1,"rank":-1}      # that's where pieces are placed initially (not really needed tbh)
 
@@ -48,7 +54,21 @@ class Piece:
         self.start_position = self.position.copy()
 
     def __str__(self):
-        return f"{self.name=}, {self.position=}, {self.color=}, {self.is_start=}"
+        return f"""------------------------------
+{self.name=}
+{self.piece_id=}
+{self.value=}
+{self.type=}
+{self.is_black=}
+{self.player.name=}
+{self.en_passant_able_on_count=}
+{self.color=}
+{self.is_start=}
+{self.start_position=}
+{self.position=}
+{self.valid_positions=}
+------------------------------
+"""
 
     def set_game(self,game:ChessBoard):
         '''
@@ -214,7 +234,7 @@ class ChessBoard:
     This ChessBoard class is used to create a virtual chessboard, setup the initial positions and run the main loop.
     '''
     def __init__(self):
-        self.pieces = []
+        self.pieces:list[Piece] = []
         #initial_position = test_position # This is for testing
         for rank in initial_position:
             for file in initial_position[rank]:
@@ -229,7 +249,8 @@ class ChessBoard:
         self.player2 = Player("b", self.pieces)
         self.player2.game = self
         self.current_Player = self.player1
-        self.count = -1
+        self.count = 0
+        self.game_snapshots_per_count: dict[int,list[Piece]] = {}
 
 
     def get_piece_on_position(self,pos:dict[str,int]) -> Piece:
@@ -267,6 +288,21 @@ class ChessBoard:
         print("r/f | A || B || C || D || E || F || G || H |")
 
 
+    def snapshot(self):
+        '''
+        This will create a snapshot of the chessboard by creating new Piece-objects and returning them as a list
+        :return:
+        '''
+        temp_list: list[Piece] = []
+        for piece in self.pieces:
+            temp_piece = Piece(piece.piece_id,piece.position)
+            temp_piece.start_position = piece.start_position
+            temp_piece.en_passant_able_on_count = piece.en_passant_able_on_count
+            temp_piece.is_start = piece.is_start
+            temp_list.append(temp_piece)
+        return temp_list.copy()
+
+
     def wait_for_cli_input(self) -> int:
         '''
         This will get the input from the user playing this game from the cli in the format:
@@ -282,10 +318,16 @@ Example move Pawn G7 to G5:
 G7-G5
         """)
         move = input(f"{['White','Black'][self.current_Player == self.player2]}> ").lower()
+
+        if move.startswith("/"):
+            LE.exec_cmd(move,self)
+            return 1
+
         return_code,piece_to_move,where_to_move = LE.validate_move(self.current_Player, self.pieces, move)
         if return_code == 0: ### -1 -> this check is disabled enable by replacing with 0
             return_code = piece_to_move.set_position(where_to_move,piece_on_new_position=self.get_piece_on_position(where_to_move),count=self.count)
             if return_code == 0:
+                self.game_snapshots_per_count[self.count] = self.snapshot()
                 self.count += 1
             return return_code
         else:
@@ -302,16 +344,23 @@ G7-G5
         :return: not evan an empty string
         '''
         self.run=True
+        action = ""
         while self.run:
             self.display_cli()
             return_code = self.wait_for_cli_input()
             if return_code != 0:
                 continue
             self.current_Player = (self.player1,self.player2)[self.current_Player == self.player1]
-            self.run = not LE.is_this_checkmate(self.pieces,self.current_Player)
+
+            action, player = LE.check_for_win_or_draw(self)
+            if action in ["w","d"]:
+                self.run = False
 
         self.display_cli()
-        print(f"{(self.player1.name,self.player2.name)[self.current_Player == self.player1]} Won!")
+        if action == "w":
+            print(f"{player.name} Won!")
+        elif action == "d":
+            print("It's a draw!")
 
 
 if __name__ == '__main__':

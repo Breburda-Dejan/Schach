@@ -8,6 +8,7 @@ ERRORS = {
     },
     "lookup":{
         0:"Everything ok!",
+        1:"Ok, but command executed",
         21:"Not a valid Mode",
         31:"Not a Position",
         32:"Not a valid Move",
