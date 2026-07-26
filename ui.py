@@ -320,6 +320,10 @@ class ChessBoard:
         print("""
 Example move Pawn G7 to G5:
 G7-G5
+You can also castle by typing:
+o-o     -> short-castle
+o-o-o   -> long-castle
+
         """)
         move = input(f"{['White','Black'][self.current_Player == self.player2]}> ").lower()
 
