@@ -164,6 +164,7 @@ class Piece:
         self.piece_id = promote_to_id
         self.name = PIECE_IDS[promote_to_id]["name"]
         self.can_promote = False
+        self.start_position = self.position.copy()
         self.value = PIECE_IDS[promote_to_id]["value"]
         return 0
 
@@ -272,6 +273,23 @@ class ChessBoard:
             print()
         print("r/f | A || B || C || D || E || F || G || H |")
 
+    def get_color_of_square(self,position) -> str:
+        '''
+        This will output the color of a chosen square.
+
+        :param position: Position -> {"file":[1-8],"rank":[1-8]}
+        :return: "w" -> square is white, "b" -> square is black
+        '''
+        if position["file"] % 2 == 0:
+            if position["rank"] % 2 != 0:
+                return "w"
+            else:
+                return "b"
+        else:
+            if position["rank"] % 2 == 0:
+                return "w"
+            else:
+                return "b"
 
     def snapshot(self):
         '''

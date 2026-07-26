@@ -17,9 +17,9 @@ Well, i will do it anyway. Without using any AI btw.
 - [x] Implement En-Passant
 - [x] Implement Castle
 - [x] Check for Checkmate
-- [ ] Check for Draw
-  - [ ] Check for Draw by unsufficient material
-  - [ ] Check for Draw by being unable to move
-  - [ ] Check for Draw by repetition
+- [x] Check for Draw
+  - [x] Check for Draw by unsufficient material
+  - [x] Check for Draw by being unable to move
+  - [x] Check for Draw by repetition
 
   

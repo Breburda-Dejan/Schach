@@ -108,6 +108,18 @@ def exec_cmd(cmd: str,game: ChessBoard):
                 new_piece.player.king = new_piece
             game.pieces.append(new_piece)
 
+    elif cmd.startswith("/kill"):
+        if len(cmd[6:].strip()) == 2:
+            position = cmd[6:].strip()
+            valid_move_pattern = r"[a-h][1-8]"
+            if not re.match(valid_move_pattern, position):
+                print("not a valid position")
+                return
+            position = map_notation_to_move(position)
+            piece_on_position = game.get_piece_on_position(position)
+            if piece_on_position != None:
+                piece_on_position.kill()
+
     elif cmd.startswith("/clear"):
         game.pieces = []
         game.player2.pieces = []
@@ -640,21 +652,16 @@ def is_my_king_in_check(king: Piece, pieces: list[Piece], player: Player) -> tup
         pos_list = [pos["file"], pos["rank"]]
         raw_vector = [y - x for x, y in zip(king_pos_list, pos_list)]
         vector = [abs(value) for value in raw_vector]
-        if 1 in vector:
-            if piece_on_pos.type.lower() == "king":
-                return True,piece_on_pos
-        elif vector in [[1, 2], [2, 1]]:  # is knight
-            if piece_on_pos.type.lower() == "knight":
-                return True,piece_on_pos
-        elif vector[0] == vector[1]:
-            if piece_on_pos.type.lower() in ["bishop", "queen"]:
-                return True,piece_on_pos
-        elif vector[0] == 0 or vector[1] == 0:
-            if piece_on_pos.type.lower() in ["rook", "queen"]:
-                return True,piece_on_pos
-        elif raw_vector[1] == (1, -1)[piece_on_pos.is_black] and raw_vector[0] != 0:
-            if piece_on_pos.type.lower() == "pawn":
-                return True,piece_on_pos
+        if all(v<=1 for v in vector) and piece_on_pos.type.lower() == "king":
+            return True,piece_on_pos
+        elif vector in [[1, 2], [2, 1]] and piece_on_pos.type.lower() == "knight":
+            return True,piece_on_pos
+        elif vector[0] == vector[1] and piece_on_pos.type.lower() in ["bishop", "queen"]:
+            return True,piece_on_pos
+        elif (vector[0] == 0 or vector[1] == 0) and piece_on_pos.type.lower() in ["rook", "queen"]:
+            return True,piece_on_pos
+        elif raw_vector[1] == (1, -1)[piece_on_pos.is_black] and raw_vector[0] != 0 and piece_on_pos.type.lower() == "pawn":
+            return True,piece_on_pos
     return False,None
 
 
@@ -713,7 +720,7 @@ def would_be_check_after_move(pieces: list[Piece], player: Player, piece_to_move
 
 def check_for_win_or_draw(game: ChessBoard) -> tuple[str,Player]:
     '''
-    Checks for win, by checkmate, or draw, by no more valid moves.
+    Checks for win, by checkmate, or a draw.
 
     :param game: ChessBoard - object of the game that requested the check
     :return: string ("w","d","n") for win, draw, nothing; Player that won, else None
@@ -742,6 +749,40 @@ def check_for_win_or_draw(game: ChessBoard) -> tuple[str,Player]:
     if 3 in list(count_of_positions_on_board.values()):
         return "d",None
 
+    #check for draw by insufficient material
+    list_of_all_ids_left = [piece.piece_id for piece in game.pieces]
+    if len(list_of_all_ids_left) == 2: # only the 2 kings left?
+        kings = ["W-K","B-K"]
+        if all(id in kings for id in list_of_all_ids_left):
+            return "d",None
+
+    elif len(list_of_all_ids_left) == 3: # 2 kings one other
+        insufficient_on_its_own = ["W-N","W-B","B-N","B-B"]
+        if any(id in insufficient_on_its_own for id in list_of_all_ids_left):
+            return "d",None
+
+    elif len(list_of_all_ids_left) == 4: # well, that's a little bit more complicated
+        list_of_p1_ids_left = [(piece.piece_id, piece) for piece in game.player1.pieces]
+        list_of_p2_ids_left = [(piece.piece_id, piece) for piece in game.player2.pieces]
+        insufficient_on_its_own = ["knight","bishop"]
+        if len(list_of_p1_ids_left) == 2 == len(list_of_p2_ids_left):
+            if (any(piece.type.lower() in insufficient_on_its_own for id,piece in list_of_p1_ids_left) and
+                any(piece.type.lower() in insufficient_on_its_own for id,piece in list_of_p2_ids_left)):
+                return "d",None
+        elif len(list_of_p1_ids_left) == 3 or len(list_of_p2_ids_left) == 3:
+            type_count_of_p1 = dict(Counter([piece.type for _, piece in list_of_p1_ids_left]))
+            type_count_of_p2 = dict(Counter([piece.type for _, piece in list_of_p2_ids_left]))
+            if (type_count_of_p1.get("knight", 0) == 2 or
+                type_count_of_p2.get("knight", 0) == 2):
+                return "d",None
+            elif (type_count_of_p1.get("bishop", 0) == 2 or
+                type_count_of_p2.get("bishop", 0) == 2):
+                white_bishops = 0
+                for piece in pieces:
+                    if piece.type.lower() == "bishop" and game.get_color_of_square(piece.position) == "w":
+                        white_bishops += 1
+                if white_bishops != 1:
+                    return "d",None
     return "n",None
 
 
