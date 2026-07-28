@@ -150,22 +150,22 @@ class Piece:
         self.player.pieces.remove(self)
         return 0
 
-    def promote(self,promote_to_id) -> int:
+    def promote(self,promote_to_id,position:dict[str,int]) -> int:
         '''
-        This function is for promoting a Piece to a Piece of choice by giving it the ID of the Piece it should promote to.
+        This function is to promote a pawn to any other piece of its color that is not a king or a pawn.
 
-        :param promote_to_id: ID of the Piece it should promote to
-        :return: A return_code, that either indicates everything went as expected, 0, or that something went wrong, any other number.
+        :param promote_to_id: ID of the Piece to promote to
+        :param position: Position where the promoted piece should land
+        :return: 0 -> everything works, 33 - > something wrong
         '''
-        if not self.can_promote:
-            return 91
         if PIECE_IDS[promote_to_id]["color"] != ("w","b")[self.is_black] or promote_to_id not in PIECE_IDS.keys() or promote_to_id in ["W-P","W-K","B-P","B-K"]:
             return 33
         self.piece_id = promote_to_id
         self.name = PIECE_IDS[promote_to_id]["name"]
-        self.can_promote = False
-        self.start_position = self.position.copy()
+        self.start_position = position.copy()
+        self.position = position.copy()
         self.value = PIECE_IDS[promote_to_id]["value"]
+        self.type = PIECE_IDS[promote_to_id]["type"]
         return 0
 
     def print_status(self):
@@ -331,17 +331,23 @@ o-o-o   -> long-castle
             LE.exec_cmd(move,self)
             return 1
 
+        if len(move.strip()) == 9:
+            return_code,piece_to_promote,end_position,id_to_promote_to = LE.check_for_promotion(self.current_Player,move.strip().split(" ")[0],move.strip().split(" ")[1].upper())
+            if return_code == 2:
+                piece_to_promote.promote(id_to_promote_to,end_position)
+                return 0
+            print(error_lookup(return_code))
+
         return_code,piece_to_move,where_to_move = LE.validate_move(self.current_Player, self.pieces, move)
         if return_code == 0: ### -1 -> this check is disabled enable by replacing with 0
+            if where_to_move["rank"] in [1,8] and piece_to_move.type.lower() == "pawn":
+                return 64
             return_code = piece_to_move.set_position(where_to_move,piece_on_new_position=self.get_piece_on_position(where_to_move),count=self.count)
             if return_code == 0:
                 self.game_snapshots_per_count[self.count] = self.snapshot()
                 self.count += 1
             return return_code
         else:
-            print()
-            print(error_lookup(return_code))
-            print()
             return return_code
 
 
@@ -357,6 +363,7 @@ o-o-o   -> long-castle
             self.display_cli()
             return_code = self.wait_for_cli_input()
             if return_code != 0:
+                print(error_lookup(return_code))
                 continue
             self.current_Player = (self.player1,self.player2)[self.current_Player == self.player1]
 

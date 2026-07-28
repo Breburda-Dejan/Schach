@@ -30,6 +30,10 @@ Well, I will do it anyway. Without using any AI btw.
 > You can also castle by typing: <br>
 > **o-o**  -> short castle<br>
 > **o-o-o** -> long castlery valid position 
+> 
+> If you want to promote a pawn, type the normal move notation (`e7-e8`)
+> and the Piece-ID you want to promote to at the end:<br>
+> `e7-e8 W-Q` -> Promotes the pawn on e7 to a White Queen and then places it on e8.
 
 
 ---
@@ -80,6 +84,9 @@ Piece on the target square.
 ---
 ### `/info [a-h][1-8]`
 + `/info c4` -> Displays information about the piece on `c4`
+---
+### `/switch`
++ `/switch player` -> Changes the Player that has to play.
 
 ---
 ## Features:
@@ -92,6 +99,7 @@ Piece on the target square.
 - [x] Check for possible moves that would result in check, and filter them
 - [x] Implement En-Passant
 - [x] Implement Castle
+- [x] Implement Promotion
 - [x] Check for Checkmate
 - [x] Check for draw
   - [x] Check for draw by insufficient material

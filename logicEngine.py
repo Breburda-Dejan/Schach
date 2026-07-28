@@ -32,7 +32,6 @@ def load_position_from_file(game: ChessBoard,positions_from_file) -> list[Piece]
     return pieces
 
 
-
 def exec_cmd(cmd: str,game: ChessBoard):
     '''
     This function is used to add debug functionality by using commands that can do magic
@@ -133,7 +132,7 @@ def exec_cmd(cmd: str,game: ChessBoard):
 
     elif cmd.startswith("/load"):
         if cmd[6:14].lower() == "position":
-            game.count = -1
+            game.count = 0
             game.pieces = []
             game.player2.pieces = []
             game.player1.pieces = []
@@ -235,7 +234,7 @@ def exec_cmd(cmd: str,game: ChessBoard):
                         temp_piece.player.pieces.append(temp_piece)
                         game.pieces.append(temp_piece)
 
-                    game.current_Player = (game.player1,game.player2)[count_to_reset_to % 2 == 0]
+                    game.current_Player = (game.player2,game.player1)[count_to_reset_to % 2 == 0]
                     game.count = count_to_reset_to + 1
                     print(f"Successfully reset to position on count {count_to_reset_to}")
                     return
@@ -302,6 +301,12 @@ def exec_cmd(cmd: str,game: ChessBoard):
             piece_on_position: Piece = game.get_piece_on_position(map_notation_to_move(position))
             piece_on_position.valid_positions = calculate_valid_moves(game.pieces,piece_on_position,piece_on_position.player)
             print(str(piece_on_position))
+
+    elif cmd.startswith("/switch"):
+        if cmd[8:].strip() == "player":
+            player1 = game.player1
+            player2 = game.player2
+            game.current_Player = (player1,player2)[game.current_Player == player1]
 
 
 def string_to_bool(string:str) -> bool:
@@ -679,18 +684,26 @@ def would_be_check_after_move(pieces: list[Piece], player: Player, piece_to_move
     temp_pieces = []
     king = None
     remove_after_copy = False # just a flag so I know when to delete the extra piece
-
+    posFile = piece_to_move.position["file"]
+    posRank = piece_to_move.position["rank"]
+    en_passanted_pawn = None
 
     if piece_to_move.position == INITIAL_PIECE_POSITION:
         remove_after_copy = True
         pieces.append(piece_to_move)
 
+    vector = piece_to_move.calculate_vector(move)
+    if piece_to_move.type.lower() == "pawn" and abs(vector[0]) == 1 and abs(vector[1]) == 1 and player.game.get_piece_on_position(move) == None:
+        if player.game.get_piece_on_position({"file":posFile + vector[0],"rank":posRank}).type.lower() == "pawn":
+            en_passanted_pawn = player.game.get_piece_on_position({"file":posFile + vector[0],"rank":posRank})
+
     for piece in pieces:
         temp_pos = piece.position
-        if piece.position == move:
+        if piece.position == move or (en_passanted_pawn != None and piece.position == en_passanted_pawn.position):
             continue
-        if piece.position == piece_to_move.position:
+        elif piece.position == piece_to_move.position:
             temp_pos = move
+
         temp_pieces.append(Piece(piece.piece_id, temp_pos))
 
     if remove_after_copy:
@@ -784,6 +797,28 @@ def check_for_win_or_draw(game: ChessBoard) -> tuple[str,Player]:
                 if white_bishops != 1:
                     return "d",None
     return "n",None
+
+
+def check_for_promotion(player:Player, move:str, id_to_promote) -> tuple[int,Piece,dict[str,int],str]:
+    '''
+    This will check if a pawn can promote.
+
+    :param player: player that requested the check
+    :param move: Move notations [a-h][1-8]-[a-h][1-8]
+    :param id_to_promote: id of the piece to promote to
+    :return: return_code, pawn to move as object, position where promoted pawn will land, id of the piece to promote to
+    '''
+    return_code, piece_to_promote, end_position = validate_move(player,player.game.pieces,move)
+    if return_code != 0:
+        return return_code,None,None,None
+    if piece_to_promote.type.lower() != "pawn":
+        return 61,None,None,None
+    if not piece_to_promote.position["rank"] in [2,7]:
+        return 62,None,None,None
+    if id_to_promote in ["W-P","W-K","B-P","B-K"]:
+        return 63,None,None,None
+
+    return 2, piece_to_promote,end_position,id_to_promote
 
 
 def remove_positions_of_own_pieces(moves: list[dict[str, int]], positions_of_own_pieces: list[dict[str, int]]) -> list[dict[str, int]]:
