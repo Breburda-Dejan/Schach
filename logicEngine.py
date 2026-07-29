@@ -815,6 +815,8 @@ def check_for_promotion(player:Player, move:str, id_to_promote) -> tuple[int,Pie
         return 61,None,None,None
     if not piece_to_promote.position["rank"] in [2,7]:
         return 62,None,None,None
+    if not end_position["rank"] in [1,8]:
+        return 65,None,None,None
     if id_to_promote in ["W-P","W-K","B-P","B-K"]:
         return 63,None,None,None
 

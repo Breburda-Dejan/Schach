@@ -26,6 +26,7 @@ ERRORS = {
         62:"This pawn is not on a rank where it can promote",
         63:"Not a valid Piece to promote to",
         64:"This pawn has to promote in order to move forward!",
+        65:"This pawn can't promote now",
         91:"This Piece can't Promote",
         92:"This is not a Valid Notation",
         93:"There is no Piece to move?!"
