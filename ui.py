@@ -139,7 +139,6 @@ class Piece:
         self.is_start = False
         return 0
 
-
     def kill(self) -> int:
         '''
         This is used to kill a captured pawn, by removing it from the chessboard-pieces-list, so it can't cause any weird artifact problems.
@@ -160,6 +159,8 @@ class Piece:
         '''
         if PIECE_IDS[promote_to_id]["color"] != ("w","b")[self.is_black] or promote_to_id not in PIECE_IDS.keys() or promote_to_id in ["W-P","W-K","B-P","B-K"]:
             return 33
+        if self.game.get_piece_on_position(position) != None:
+            self.game.get_piece_on_position(position).kill()
         self.piece_id = promote_to_id
         self.name = PIECE_IDS[promote_to_id]["name"]
         self.start_position = position.copy()
@@ -238,7 +239,6 @@ class ChessBoard:
         self.count = 0
         self.game_snapshots_per_count: dict[int,list[Piece]] = {}
 
-
     def get_piece_on_position(self,pos:dict[str,int]) -> Piece:
         '''
         This is a helper function that is used to get a Piece-object of the Piece that is standing on a specific position on the board.
@@ -250,7 +250,6 @@ class ChessBoard:
         if len(piece_of_pos) == 1:
             return piece_of_pos[0]
         return None
-
 
     def display_cli(self,pieces:list[Piece]=None):
         '''
@@ -306,7 +305,6 @@ class ChessBoard:
             temp_list.append(temp_piece)
         return temp_list.copy()
 
-
     def wait_for_cli_input(self) -> int:
         '''
         This will get the input from the user playing this game from the cli in the format:
@@ -360,7 +358,6 @@ B-Q -> Black Queen\tB-N -> Black Knight\tB-B -> Black Bishop
             return return_code
         else:
             return return_code
-
 
     def start_cli(self):
         '''
