@@ -346,6 +346,7 @@ B-Q -> Black Queen\tB-N -> Black Knight\tB-B -> Black Bishop
                 piece_to_promote.promote(id_to_promote_to,end_position)
                 return 0
             print(error_lookup(return_code))
+            return return_code
 
         return_code,piece_to_move,where_to_move = LE.validate_move(self.current_Player, self.pieces, move)
         if return_code == 0: ### -1 -> this check is disabled enable by replacing with 0

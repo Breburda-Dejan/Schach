@@ -2,7 +2,7 @@ import glob
 import pickle
 import re
 from collections import Counter
-from ui import Piece, Player, ChessBoard, INITIAL_PIECE_POSITION
+from ui import Piece, Player, ChessBoard, INITIAL_PIECE_POSITION, PIECE_IDS
 
 
 def load_position_from_file(game: ChessBoard,positions_from_file) -> list[Piece]:
@@ -177,7 +177,6 @@ def exec_cmd(cmd: str,game: ChessBoard):
                 loaded_game = pickle.load(load)
 
             for count, pieces_to_load in loaded_game.items():
-                print(count)
                 game.game_snapshots_per_count[count] = load_position_from_file(game, pieces_to_load)
 
             count_to_reset_to = int(list(game.game_snapshots_per_count.keys())[-1])
@@ -307,6 +306,11 @@ def exec_cmd(cmd: str,game: ChessBoard):
             player1 = game.player1
             player2 = game.player2
             game.current_Player = (player1,player2)[game.current_Player == player1]
+
+    elif cmd.startswith("/reset"):
+        game.__init__()
+        print("Game Reset!")
+
 
 
 def string_to_bool(string:str) -> bool:
@@ -665,7 +669,7 @@ def is_my_king_in_check(king: Piece, pieces: list[Piece], player: Player) -> tup
             return True,piece_on_pos
         elif (vector[0] == 0 or vector[1] == 0) and piece_on_pos.type.lower() in ["rook", "queen"]:
             return True,piece_on_pos
-        elif raw_vector[1] == (1, -1)[piece_on_pos.is_black] and raw_vector[0] != 0 and piece_on_pos.type.lower() == "pawn":
+        elif raw_vector[1] == (-1, 1)[piece_on_pos.is_black] and raw_vector[0] != 0 and piece_on_pos.type.lower() == "pawn":
             return True,piece_on_pos
     return False,None
 
@@ -811,6 +815,8 @@ def check_for_promotion(player:Player, move:str, id_to_promote) -> tuple[int,Pie
     return_code, piece_to_promote, end_position = validate_move(player,player.game.pieces,move)
     if return_code != 0:
         return return_code,None,None,None
+    if not id_to_promote in list(PIECE_IDS.keys()):
+        return 63,None,None,None
     if piece_to_promote.type.lower() != "pawn":
         return 61,None,None,None
     if not piece_to_promote.position["rank"] in [2,7]:
@@ -818,6 +824,8 @@ def check_for_promotion(player:Player, move:str, id_to_promote) -> tuple[int,Pie
     if not end_position["rank"] in [1,8]:
         return 65,None,None,None
     if id_to_promote in ["W-P","W-K","B-P","B-K"]:
+        return 63,None,None,None
+    if PIECE_IDS[id_to_promote]["color"] != player.color:
         return 63,None,None,None
 
     return 2, piece_to_promote,end_position,id_to_promote
