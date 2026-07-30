@@ -1,0 +1,14 @@
+table {
+  width: 1000px;
+  height: 1000px;
+  table-layout:fixed;
+  border:10px solid #000;
+}
+td {
+  width: 125px;
+  overflow:hidden;
+}
+tr {
+  line-height: 125px;
+  white-space: nowrap;
+}

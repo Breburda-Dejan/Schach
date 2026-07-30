@@ -5,7 +5,6 @@
 #   Breburda Dejan
 #####################################################################################
 
-import logicEngine as LE
 from errors import error_lookup
 
 settings = {
@@ -272,6 +271,7 @@ class ChessBoard:
             print()
         print("r/f | A || B || C || D || E || F || G || H |")
 
+    @classmethod
     def get_color_of_square(self,position) -> str:
         '''
         This will output the color of a chosen square.
@@ -315,6 +315,7 @@ class ChessBoard:
 
         :return: A return_code, that either indicates everything went as expected, 0, or that something went wrong, any other number.
         '''
+        import logicEngine as LE
         print("""
 Example move Pawn G7 to G5:
 G7-G5
@@ -366,6 +367,7 @@ B-Q -> Black Queen\tB-N -> Black Knight\tB-B -> Black Bishop
 
         :return: not evan an empty string
         '''
+        import logicEngine as LE
         self.run=True
         action = ""
         while self.run:

@@ -3,8 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <title>Schach</title>
+    <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
-    <canvas id="chessboard"></canvas>
+    <table>
+        {% for r in range(8) %}
+        <tr>
+            {% for f in range(8) %}
+            <td style="{{ field_to_color[f+1][8-r] }}">
+                <img src="{{ pieces[f+1][8-r] }}" width="100px" height="100px" alt="&nbsp;">
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>
