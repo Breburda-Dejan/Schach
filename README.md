@@ -87,7 +87,9 @@ Piece on the target square.
 ---
 ### `/switch`
 + `/switch player` -> Changes the Player that has to play.
-
+---
+### `/reset`
++ `/reset` -> Resets the board to the default position.
 ---
 ## Features:
 
