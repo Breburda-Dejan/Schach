@@ -168,6 +168,11 @@ class Piece:
         self.type = PIECE_IDS[promote_to_id]["type"]
         return 0
 
+
+    def update_valid_moves(self):
+        import logicEngine as LE
+        self.valid_positions = LE.calculate_valid_moves(self.game.pieces, self, self.player)
+
     def print_status(self):
         print(f"""
         {self.piece_id=}
@@ -315,7 +320,6 @@ class ChessBoard:
 
         :return: A return_code, that either indicates everything went as expected, 0, or that something went wrong, any other number.
         '''
-        import logicEngine as LE
         print("""
 Example move Pawn G7 to G5:
 G7-G5
@@ -336,7 +340,11 @@ B-Q -> Black Queen\tB-N -> Black Knight\tB-B -> Black Bishop
 
         """)
         move = input(f"{['White','Black'][self.current_Player == self.player2]}> ").lower()
-
+        return self.try_to_make_move(move)
+        
+    
+    def try_to_make_move(self,move):
+        import logicEngine as LE
         if move.startswith("/"):
             LE.exec_cmd(move,self)
             return 1
@@ -360,6 +368,19 @@ B-Q -> Black Queen\tB-N -> Black Knight\tB-B -> Black Bishop
             return return_code
         else:
             return return_code
+        
+    def gui_input(self,move):
+        import logicEngine as LE
+        return_code = self.try_to_make_move(move)
+        if return_code != 0:
+            print(error_lookup(return_code))
+            return return_code
+        self.current_Player = (self.player1,self.player2)[self.current_Player == self.player1]
+        action, player = LE.check_for_win_or_draw(self)
+        if action in ["w","d"]:
+            print(action)
+            ...
+
 
     def start_cli(self):
         '''

@@ -353,10 +353,12 @@ def validate_move(player:Player, pieces, move: str) -> int:
     piece_to_move: Piece = [piece for piece in pieces if piece.position == map_notation_to_move(start_move)]
     if len(piece_to_move) != 1:
         return 93, None, None
-    piece_to_move = piece_to_move[0]
+    piece_to_move = piece_to_move[0]   
     if player.color != piece_to_move.color:
         return 41, None, None
     end_move = map_notation_to_move(end_move)
+    if piece_to_move.type.lower() == "king" and abs(piece_to_move.calculate_vector(end_move)[0]) == 2:
+        return check_if_player_can_castle(player,pieces,("o-o","o-o-o")[piece_to_move.calculate_vector(end_move)[0] == -2])
     piece_to_move.valid_positions = calculate_valid_moves(pieces, piece_to_move, player).copy()
     return 0, piece_to_move, end_move
 
@@ -568,6 +570,13 @@ def king(king: Piece, pieces: list[Piece]) -> list[dict[str, int]]:
     for direction in directions_list:
         temp_pos = {"file": posFile + direction[0], "rank": posRank + direction[1]}
         dumb_king_moves.append(temp_pos)
+    
+
+    _,_,short_castle = check_if_player_can_castle(king.player,pieces,"o-o")
+    _,_,long_castle = check_if_player_can_castle(king.player,pieces,"o-o-o")
+
+    dumb_king_moves.append(short_castle)
+    dumb_king_moves.append(long_castle)
 
     return dumb_king_moves
 
@@ -579,9 +588,13 @@ def clean_moves(moves: list[dict[str, int]]) -> list[dict[str, int]]:
     :param moves: list of uncleaned positions
     :return: list of cleaned positions
     '''
+    if len(moves) == 0:
+        return []
     cleaned_moves = []
     allowed_values = [1, 2, 3, 4, 5, 6, 7, 8]
     for move in moves:
+        if move is None:
+            continue
         if list(move.values())[0] not in allowed_values or list(move.values())[1] not in allowed_values:
             continue
         cleaned_moves.append(move)
@@ -669,7 +682,7 @@ def is_my_king_in_check(king: Piece, pieces: list[Piece], player: Player) -> tup
             return True,piece_on_pos
         elif (vector[0] == 0 or vector[1] == 0) and piece_on_pos.type.lower() in ["rook", "queen"]:
             return True,piece_on_pos
-        elif raw_vector[1] == (-1, 1)[piece_on_pos.is_black] and raw_vector[0] != 0 and piece_on_pos.type.lower() == "pawn":
+        elif raw_vector[1] == (-1, 1)[piece_on_pos.is_black] and raw_vector[0] in [1,-1] and piece_on_pos.type.lower() == "pawn":
             return True,piece_on_pos
     return False,None
 

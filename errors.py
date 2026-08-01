@@ -6,7 +6,8 @@ ERRORS = {
         "41 - 50":"User - Errors",
         "51 - 60":"Castle - Errors",
         "61 - 70":"Promotion - Errors",
-        "91 - 100":"Logic - Errors"
+        "91 - 100":"Logic - Errors",
+        "101 - 110":"GUI - Errors"
     },
     "lookup":{
         0:"Everything ok!",

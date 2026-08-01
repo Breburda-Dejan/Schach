@@ -7,8 +7,43 @@ table {
 td {
   width: 125px;
   overflow:hidden;
+  position: relative;
 }
 tr {
   line-height: 125px;
+  max-height: 125px;
   white-space: nowrap;
+}
+
+img {
+    position: absolute;
+    margin-top: -50px;
+    margin-left: 10px;
+}
+
+.piece:hover {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+.selected {
+  display: block;
+  position: absolute;
+  z-index: 1000;
+  width: 125px;
+  height: 125px;
+  transform: translate(0%,-50%);
+  border-radius:50%;
+  background-color: rgba(178, 178, 178, 0.464);
+}
+
+.valid {
+  display: block;
+  position: absolute;
+  z-index: 1000;
+  width: 25px;
+  height: 25px;
+  transform: translate(200%,-50%);
+  border-radius:50%;
+  background-color: rgba(76, 76, 76, 0.629);
 }
