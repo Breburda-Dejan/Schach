@@ -6,35 +6,46 @@
     <link rel="stylesheet" href="../static/style.css">
 </head>
 <body>
-    <table>
+    <table class="board">
         {% for r in range(8) %}
         <tr>
             {% for f in range(8) %}
             {% if player == 'w' %}
-            <td style="{{ field_to_color[f+1][8-r] }}" id="{{f+1}},{{8-r}}"></td>
+            <td style="{{ field_to_color[f+1][8-r] }}" id="{{f+1}},{{8-r}}" class="square"></td>
             {% else %}
-            <td style="{{ field_to_color[8-f][r+1] }}" id="{{8-f}},{{r+1}}"></td>
+            <td style="{{ field_to_color[8-f][r+1] }}" id="{{8-f}},{{r+1}}" class="square"></td>
             {% endif %}
             {% endfor %}
         </tr>
         {% endfor %}
     </table>
+    <table id="promotion-table" class="pormotion-choice hidden">
+        <tr class="promote-square"><td class="promote-square" id="queen" onclick="select_piece_to_promote('Q')"><img src="../static/pieces/W-Q.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True></td><td class="promote-square" id="rook" onclick="select_piece_to_promote('R')"><img src="../static/pieces/W-R.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True></td></tr>
+        <tr class="promote-square"><td class="promote-square" id="bishop" onclick="select_piece_to_promote('B')"><img src="../static/pieces/W-B.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True></td><td class="promote-square" id="knight" onclick="select_piece_to_promote('N')"><img src="../static/pieces/W-N.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True></td></tr>
+    </table>
+    
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
 <script>
     var socket = io();
     var game_id = "{{game_id}}";
-    var player = "{{player}}"
+    var player = "{{player}}";
+    var selected_square = []
+    var positions = {}
+    var can_promote = false;
+    var square_to_promote_to = [];
+    var player_color = "";
     socket.emit("join_game",game_id);
 
     socket.on("reload", (raw_data) => {
-        console.log(raw_data)
-        const positions = raw_data.positions;
+        positions = raw_data.positions;
         const data = raw_data.data;
+        selected_square[0]=data.selected_square.file;
+        selected_square[1]=data.selected_square.rank;
         for (let f = 1; f<=8; f++){
             for (let r = 1; r<=8; r++){
                 const square = document.getElementById(`${f},${r}`);
-                square.innerHTML = `<img src="${positions[f][r]}" class="piece" width="100px" height="100px" alt="&nbsp;">`;
+                square.innerHTML = `<img src="../static/pieces/${positions[f][r]}.svg" class="piece" width="100px" height="100px" alt="&nbsp;" dragable=True>`;
                 square.onclick = function(){};
                 if (data.turn == player){
                     square.onclick = function () {
@@ -42,10 +53,10 @@
                     };
                     if (data.selected_square.file == f && data.selected_square.rank == r){
                         square.innerHTML += `<div class="selected"></div>`
-                    }
+                    };
                     if (data.valid_moves.includes(`${f},${r}`)){
                         square.innerHTML += `<div class="valid"></div>`
-                    }
+                    };
                 }
             }
         }
@@ -53,15 +64,54 @@
 
 
 
+    function promote(f, r, c){
+        show_promotion_options();
+        can_promote = true;
+        square_to_promote_to = [f,r]
+        player_color = c
+    }
 
-    function handle_click(f, r) {
+    function show_promotion_options(){
+        document.getElementById("promotion-table").classList.remove("hidden");
+    }
+
+    function select_piece_to_promote(type){
+        document.getElementById("promotion-table").classList.add("hidden");
+        c = player_color.toUpperCase()
+        id = `${c}-${type}`
+
         fetch('/handle_click/{{game_id}}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ f: f, r: r })
+            body: JSON.stringify({ f: square_to_promote_to[0], r: square_to_promote_to[1], p:id })
         });
+    }
+
+
+    function handle_click(f, r) {
+        document.getElementById("promotion-table").classList.add("hidden");
+        skip = false
+        if (!selected_square.includes(-1)){
+            if (positions[selected_square[0]][selected_square[1]] == "W-P" && r == 8){
+                promote(f,r,"w")
+                skip = true
+            }
+            else if (positions[selected_square[0]][selected_square[1]] == "B-P" && r == 1){
+                promote(f,r,"b")
+                skip = true
+            }
+        }
+        if(!skip){
+            fetch('/handle_click/{{game_id}}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ f: f, r: r, p: ""})
+            });
+        }
     }
 </script>
 </html>

@@ -1,10 +1,10 @@
-table {
+.board {
   width: 1000px;
   height: 1000px;
   table-layout:fixed;
   border:10px solid #000;
 }
-td {
+.square {
   width: 125px;
   overflow:hidden;
   position: relative;
@@ -15,7 +15,7 @@ tr {
   white-space: nowrap;
 }
 
-img {
+.piece {
     position: absolute;
     margin-top: -50px;
     margin-left: 10px;
@@ -24,6 +24,39 @@ img {
 .piece:hover {
     transform: scale(1.2);
     cursor: pointer;
+}
+
+
+.promotion-image {
+  position:absolute;
+  margin-top:-50px;
+}
+
+.promotion-image:hover {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+
+.promote-square {
+  width: 50px;
+  height:50px;
+  line-height:50px;
+  overflow: hidden;
+}
+
+.hidden {
+  display: none;
+}
+
+.pormotion-choice{
+  position: fixed;
+  width: 200px;
+  height: 200px;
+  top: 410px;
+  left: 430px;
+  background-color: #3b3b3be3;
+  z-index:1001
 }
 
 .selected {

@@ -26,6 +26,7 @@ class Game:
         list_of_games[self.game_id] = self
         self.chess_board:ChessBoard = ChessBoard()
         self.next_move_notation = ""
+        self.last_move_notation = ""
         self.selected_square = {"file":-1,"rank":-1}
     
     def select_square(self, square):
@@ -41,6 +42,7 @@ class Game:
 
     def make_a_move(self):
         self.chess_board.gui_input(self.next_move_notation)
+        self.last_move_notation = self.next_move_notation
         self.next_move_notation = ""
         self.selected_square = {"file":-1,"rank":-1}
         self.reload_gui()
@@ -84,7 +86,7 @@ def location_to_piece_id_list(pieces:list[Piece]):
             pos_to_piece_id[f][r] = ""
 
     for piece in pieces:
-        pos_to_piece_id[piece.position["file"]][piece.position["rank"]] = f'../static/pieces/{piece.piece_id}.svg'
+        pos_to_piece_id[piece.position["file"]][piece.position["rank"]] = piece.piece_id
     return pos_to_piece_id
 
 
@@ -112,6 +114,7 @@ def handle_click(game_id):
     data = request.get_json()
     f = data['f']
     r = data['r']
+    p = " "+data['p'].capitalize()
     print(f"Selected field: file={f}, rank={r}")
     pos = {"file":f,"rank":r}
     game = list_of_games.get(game_id)
@@ -119,7 +122,8 @@ def handle_click(game_id):
     
     if game is not None:
         if game.next_move_notation is not "" and (piece_on_pos is None or (piece_on_pos is not None and piece_on_pos.color != game.chess_board.current_Player.color)):
-            game.next_move_notation += "-"+position_to_notation(f,r)
+            game.next_move_notation += "-"+position_to_notation(f,r)+p
+            print(game.next_move_notation)
             game.make_a_move()
         else:
             game.select_square({"file":f,"rank":r})
