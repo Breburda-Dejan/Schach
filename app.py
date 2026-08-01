@@ -76,9 +76,14 @@ for file in range(8):
 
 def location_to_piece_id_list(pieces:list[Piece]):
     pos_to_piece_id = {}
+    for f in range(8):
+        f+=1
+        pos_to_piece_id[f] = {}
+        for r in range(8):
+            r+=1
+            pos_to_piece_id[f][r] = ""
+
     for piece in pieces:
-        if not piece.position["file"] in list(pos_to_piece_id.keys()):
-            pos_to_piece_id[piece.position["file"]] = {}
         pos_to_piece_id[piece.position["file"]][piece.position["rank"]] = f'../static/pieces/{piece.piece_id}.svg'
     return pos_to_piece_id
 
@@ -86,7 +91,6 @@ def location_to_piece_id_list(pieces:list[Piece]):
 def position_to_notation(file,rank):
     files = ['a','b','c','d','e','f','g','h']
     return f"{files[file-1]}{rank}"
-
 
 
 @app.route('/<game_id>/<player>')
