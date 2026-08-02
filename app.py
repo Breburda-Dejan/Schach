@@ -1,13 +1,15 @@
 from flask import Flask, render_template, request, session, redirect, url_for
-from flask_socketio import SocketIO, send, emit, join_room, leave_room
+from flask_socketio import SocketIO, send, emit, join_room, leave_room,rooms
 import requests
 from ui import ChessBoard,Piece
 
 list_of_games:dict[str,Game] = {}
 
+open_groups:dict[str,list[str]] = {}
+
 app = Flask(__name__)
 app.secret_key = "IDK BRO"
-socketio = SocketIO(app)
+socketio = SocketIO(app,ping_timeout=60,ping_interval = 10)
 
 
 def game_id_generator():
@@ -26,6 +28,9 @@ class Game:
         self.chess_board:ChessBoard = ChessBoard()
         self.next_move_notation = ""
         self.last_move_notation = ""
+        self.white_player = None
+        self.black_player = None
+        self.users = []
         self.selected_square = {"file":-1,"rank":-1}
     
     def select_square(self, square):
@@ -112,11 +117,13 @@ def game_view(game_id, player):
         return redirect("/")
     if player not in ["w","b","w-b"]:
         return 'Player must be w or b or w-b', 404
+    
+    
     pieces = game.chess_board.pieces
     player_name = {"w":"White","b":"Black","w-b":"Game"}[player.lower()]
     selected_square = [game.selected_square["file"],game.selected_square["rank"]]
     return render_template('game.html', pieces = location_to_piece_id_list(pieces), field_to_color = field_to_color, player=player, player_name = player_name, is_turn = game.chess_board.current_Player.color == player, selected_square = selected_square, game_id = game_id)
-
+    
 
 
 @app.route('/handle_click/<game_id>', methods=['POST'])
@@ -129,6 +136,7 @@ def handle_click(game_id):
     pos = {"file":f,"rank":r}
     game = list_of_games.get(game_id)
     piece_on_pos = game.chess_board.get_piece_on_position(pos)
+
     
     if game is not None:
         if game.next_move_notation != "" and (piece_on_pos is None or (piece_on_pos is not None and piece_on_pos.color != game.chess_board.current_Player.color)):
@@ -160,15 +168,39 @@ def available_games():
     return games
 
 
+@socketio.on('disconnect')
+def on_disconnect():
+    print("-"*20)
+    print("disconnect")
+    sid = request.sid
+    print(sid)
+    for key, value in open_groups.items():
+        try:
+            value.remove(sid)
+        except ValueError:
+            pass
+        if len(value) == 0 and 0:
+            print("removing game: "+key)
+            print(list_of_games)
+            del list_of_games[key]
+            del open_groups[key]
+            print(list_of_games)
 
 
 
 @socketio.on('join_game')
-def join_game(game_id):
-    join_room(game_id)
+def join_game(data):
+    game_id = data["game_id"]
+    color = data["color"]
     game = list_of_games.get(game_id)
+    sid = request.sid
     if game is not None:
+        if not game_id in list(open_groups.keys()):
+            open_groups[game_id] = []
+        open_groups[game_id].append(sid)
+        join_room(game_id)
         game.reload_gui()
+
 
 
 if __name__ == '__main__':

@@ -41,7 +41,7 @@
     var square_to_promote_to = [];
     var player_color = "";
     var block_inputs = false;
-    socket.emit("join_game",game_id);
+    socket.emit("join_game",{"game_id":game_id,"color":player});
     document.title = `Schach - ${player_name}`
 
     socket.on("reload", (raw_data) => {
