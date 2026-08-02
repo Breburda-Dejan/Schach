@@ -20,9 +20,11 @@
         {% endfor %}
     </table>
     <table id="promotion-table" class="pormotion-choice hidden">
-        <tr class="promote-square"><td class="promote-square" id="queen" onclick="select_piece_to_promote('Q')"><img src="../static/pieces/W-Q.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True></td><td class="promote-square" id="rook" onclick="select_piece_to_promote('R')"><img src="../static/pieces/W-R.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True></td></tr>
-        <tr class="promote-square"><td class="promote-square" id="bishop" onclick="select_piece_to_promote('B')"><img src="../static/pieces/W-B.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True></td><td class="promote-square" id="knight" onclick="select_piece_to_promote('N')"><img src="../static/pieces/W-N.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True></td></tr>
+        <tr class="promote-square"><td class="promote-square" id="queen" onclick="select_piece_to_promote('Q')"></td><td class="promote-square" id="rook" onclick="select_piece_to_promote('R')"></td></tr>
+        <tr class="promote-square"><td class="promote-square" id="bishop" onclick="select_piece_to_promote('B')"></td><td class="promote-square" id="knight" onclick="select_piece_to_promote('N')"></td></tr>
     </table>
+
+    <div id="win-draw" class="popup hidden">PLAYER WHITE WON!</div>
     
 </body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
@@ -35,6 +37,7 @@
     var can_promote = false;
     var square_to_promote_to = [];
     var player_color = "";
+    var block_inputs = false;
     socket.emit("join_game",game_id);
 
     socket.on("reload", (raw_data) => {
@@ -63,15 +66,34 @@
     });
 
 
+    socket.on("gameOutcome", (raw_data) => {
+        block_inputs = true;
+        const result = raw_data.result;
+        const player = raw_data.player;
+        const win_draw_modal = document.getElementById("win-draw")
+        if (result == "w"){
+            win_draw_modal.innerHTML = `${player.toUpperCase()} WON!`;
+        }
+        else{
+            win_draw_modal.innerHTML = `IT IS A DRAW!`;
+        }
+        win_draw_modal.classList.remove("hidden")
+    });
+
+
 
     function promote(f, r, c){
-        show_promotion_options();
+        show_promotion_options(c);
         can_promote = true;
         square_to_promote_to = [f,r]
         player_color = c
     }
 
-    function show_promotion_options(){
+    function show_promotion_options(c){
+        document.getElementById("queen").innerHTML = `<img src="../static/pieces/${c.toUpperCase()}-Q.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True>`
+        document.getElementById("bishop").innerHTML = `<img src="../static/pieces/${c.toUpperCase()}-B.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True>`
+        document.getElementById("rook").innerHTML = `<img src="../static/pieces/${c.toUpperCase()}-R.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True>`
+        document.getElementById("knight").innerHTML = `<img src="../static/pieces/${c.toUpperCase()}-N.svg" class="promotion-image" width="100px" height="100px" alt="&nbsp;" dragable=True>`
         document.getElementById("promotion-table").classList.remove("hidden");
     }
 
@@ -91,6 +113,9 @@
 
 
     function handle_click(f, r) {
+        if (block_inputs){
+            return
+        }
         document.getElementById("promotion-table").classList.add("hidden");
         skip = false
         if (!selected_square.includes(-1)){

@@ -369,17 +369,18 @@ B-Q -> Black Queen\tB-N -> Black Knight\tB-B -> Black Bishop
         else:
             return return_code
         
-    def gui_input(self,move):
+    def gui_input(self,move) -> tuple[str,str]:
         import logicEngine as LE
         return_code = self.try_to_make_move(move)
         if return_code != 0:
             print(error_lookup(return_code))
-            return return_code
+            return "n",""
         self.current_Player = (self.player1,self.player2)[self.current_Player == self.player1]
         action, player = LE.check_for_win_or_draw(self)
         if action in ["w","d"]:
             print(action)
-            ...
+            return action,(self.player1.name,self.player2.name)[self.current_Player == self.player1]
+        return "n",""
 
 
     def start_cli(self):
