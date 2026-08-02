@@ -1,30 +1,50 @@
 :root{
   --main-bg-color: #3b82f6;
-  --main-bg-color-transparent: #3b82f6e9;
+  --main-bg-color-transparent: #2563ebe9;
 }
 
+body{
+  background-color: var(--main-bg-color);
+  position:fixed;
+}
+
+.game_field {
+  width: 45%;
+  aspect-ratio: 1/1;
+  left: 5%;
+  top: 5%;
+  position:fixed;
+}
 
 .board {
-  width: 1000px;
-  height: 1000px;
+  width: 45%;
+  aspect-ratio: 1/1;
+  left: 5%;
+  top: 5%;
+  position:fixed;
   table-layout:fixed;
   border:10px solid #000;
+  border-spacing: 0;
 }
+
 .square {
-  width: 125px;
+  width: 5%;
   overflow:hidden;
   position: relative;
+  border:2px solid black;
+  
 }
 tr {
-  line-height: 125px;
-  max-height: 125px;
+  line-height: 5%;
   white-space: nowrap;
 }
 
 .piece {
     position: absolute;
-    margin-top: -50px;
-    margin-left: 10px;
+    margin-top: -50%;
+    margin-left: 5%;
+    width: 90%;
+    height: 90%;
 }
 
 .piece:hover {
@@ -35,7 +55,9 @@ tr {
 
 .promotion-image {
   position:absolute;
-  margin-top:-50px;
+  width: 50%;
+  aspect-ratio: 1/1;
+  margin-top:-25%;
 }
 
 .promotion-image:hover {
@@ -45,10 +67,8 @@ tr {
 
 
 .promote-square {
-  width: 50px;
-  height:50px;
-  line-height:50px;
-  overflow: hidden;
+  width: 25%;
+  aspect-ratio: 1/1;
 }
 
 .hidden {
@@ -56,35 +76,38 @@ tr {
 }
 
 .pormotion-choice{
-  position: fixed;
-  width: 200px;
-  height: 200px;
-  top: 410px;
-  left: 430px;
-  background-color: #3b3b3be3;
+  position: relative;
+  width: 25%;
+  aspect-ratio: 1/1;
+  top: 37.5%;
+  left: 37.5%;
+  background-color: #3b3b3b;
+  border: 5px solid var(--main-bg-color);
   z-index:1001
 }
 
 .popup {
-  position: fixed;
-  width: 250px;
-  height: 100px;
-  top: 460px;
-  left:410px;
-  font-size: xx-large;
+  position: relative;
+  width: 25%;
+  aspect-ratio: 2.5/1;
+  top: 45%;
+  left:37%;
+  font-size: 200%;
   font-weight: 900;
   font-style: italic;
   text-align: center;
   background-color:var(--main-bg-color-transparent);
+  border: 5px solid black;
+  z-index: 1002;
 }
 
 .selected {
   display: block;
   position: absolute;
   z-index: 1000;
-  width: 125px;
-  height: 125px;
-  transform: translate(0%,-50%);
+  width: 95%;
+  height: 95%;
+  transform: translate(2.5%,-50%);
   border-radius:50%;
   background-color: rgba(178, 178, 178, 0.464);
 }
@@ -93,9 +116,9 @@ tr {
   display: block;
   position: absolute;
   z-index: 1000;
-  width: 25px;
-  height: 25px;
-  transform: translate(200%,-50%);
+  width: 30%;
+  height: 30%;
+  transform: translate(105%,-50%);
   border-radius:50%;
   background-color: rgba(76, 76, 76, 0.629);
 }

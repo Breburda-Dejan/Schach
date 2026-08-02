@@ -44,6 +44,7 @@ class Game:
         outcome,player = self.chess_board.gui_input(self.next_move_notation)
         if outcome is not "n":
             socketio.emit("gameOutcome",{"result":outcome,"player":player},to=self.game_id)
+            list_of_games.pop(game.game_id)
         self.last_move_notation = self.next_move_notation
         self.next_move_notation = ""
         self.selected_square = {"file":-1,"rank":-1}

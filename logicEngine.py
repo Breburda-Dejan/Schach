@@ -828,6 +828,8 @@ def check_for_promotion(player:Player, move:str, id_to_promote) -> tuple[int,Pie
     return_code, piece_to_promote, end_position = validate_move(player,player.game.pieces,move)
     if return_code != 0:
         return return_code,None,None,None
+    if end_position not in piece_to_promote.valid_positions:
+        return 32,None,None,None
     if not id_to_promote in list(PIECE_IDS.keys()):
         return 63,None,None,None
     if piece_to_promote.type.lower() != "pawn":
