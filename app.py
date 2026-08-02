@@ -154,6 +154,15 @@ def create_game(mode):
     return redirect(f"/{new_game.game_id}/w")
 
 
+@app.route('/available_games',methods=['GET'])
+def available_games():
+    games = list(list_of_games.keys())
+    return games
+
+
+
+
+
 @socketio.on('join_game')
 def join_game(game_id):
     join_room(game_id)

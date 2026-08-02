@@ -1,5 +1,5 @@
 :root{
-  --main-bg-color: #3b82f6;
+  --main-bg-color: #341d06;
   --main-bg-color-transparent: #2563ebe9;
 
   --bg-primary: #0a0e27;
@@ -33,7 +33,6 @@ body{
     top:5%;
     left:0%;
 }
-
 
 button{
     width: 80%;
@@ -70,12 +69,12 @@ button:hover{
     background-color: var(--button-local-game) ;
 }
 
-
 .chessboard {
     position:absolute;
     height: 90%;
     aspect-ratio: 1/1;
     top:5%;
+    z-index: 2000;
 }
 
 .preview {
@@ -83,5 +82,54 @@ button:hover{
     top:-85%;
     width: 70%;
     height: 90%;
-    left:25%
+    left:25%;
+    transition: transform 0.4s ease;
+}
+
+.preview.move-over{
+    transform: translate(30%);
+}
+
+.available-games {
+    position: absolute;
+    top:10%;
+    left:25%;
+    width: 20%;
+    aspect-ratio: 1/2;
+    overflow-y: auto;
+    overflow-x:hidden;
+    transition: transform 0.4s ease-in-out, opacity 0.2s ease;
+    z-index: 100;
+    border:1px solid rgb(105, 93, 71);
+}
+
+
+.available-games table{
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.available-games tr{
+    height: 20%;
+}
+
+.available-games td{
+    width: 100%;
+    padding: 0;
+}
+
+.join-button{
+    position: relative;
+    height: 100%;
+    width: 80%;
+    left: 10%;
+    margin-bottom:5%;
+    padding: 5%;
+    background-color: var(--button-join-game);
+}
+
+.hidden {
+    transform: scale(0);
+    opacity: 0;
 }

@@ -10,16 +10,44 @@
     <div class="container">
         <div class="buttons">
             <button class="new-game" id="create" onclick="window.location.href = '/new/w'">Create Game</button>
-            <button class="join-game" id="join" onclick="join()">Join Game</button>
+            <button class="join-game" id="join" onclick="show_available()">Join Game</button>
             <button class="local-game" id="local" onclick="window.location.href = '/new/w-b'">Local Game</button>
         </div>
-        <div class="preview">
-            <img class="chessboard" src="../static/images/chessboard.png" alt="">
+        <div class="available-games hidden" id="available-games">
+            <table id="button-area">
+                
+            </table>
+        </div>
+        <div class="preview" id="chessboard">
+            <img class="chessboard" src="../static/images/chessboard2.png" alt="">
         </div>
     </div>
 </body>
 <script>
 
+    async function show_available(){
+        document.getElementById("chessboard").classList.toggle("move-over");
+        document.getElementById("available-games").classList.toggle("hidden");
+        const games_list = document.getElementById("button-area");
+
+        const response = await fetch('/available_games', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        games_list.innerHTML = "";
+        const json = await response.json();
+        console.log(json)
+        json.forEach(element => {
+           games_list.innerHTML += `<tr><td><button class="join-button" onclick="join('${element}')">${element}</button></td></tr>`;
+        });
+    }
+
+    function join(id){
+        window.location.href = `/${id}/b`
+    }
 
 
 
