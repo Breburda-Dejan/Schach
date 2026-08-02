@@ -13,8 +13,7 @@ socketio = SocketIO(app)
 def game_id_generator():
     import random
     import string
-    return "test"
-    id =  ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    id =  ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
     if id not in list(list_of_games.keys()):
         return id
     else:
@@ -42,9 +41,9 @@ class Game:
 
     def make_a_move(self):
         outcome,player = self.chess_board.gui_input(self.next_move_notation)
-        if outcome is not "n":
+        if outcome != "n":
             socketio.emit("gameOutcome",{"result":outcome,"player":player},to=self.game_id)
-            list_of_games.pop(game.game_id)
+            list_of_games.pop(self.game_id)
         self.last_move_notation = self.next_move_notation
         self.next_move_notation = ""
         self.selected_square = {"file":-1,"rank":-1}
@@ -98,17 +97,25 @@ def position_to_notation(file,rank):
     return f"{files[file-1]}{rank}"
 
 
+
+
+@app.route('/')
+def start_screen():
+    return render_template("index.html")
+
+
 @app.route('/<game_id>/<player>')
 def game_view(game_id, player):
     game = list_of_games.get(game_id)
-    if game == None:
-        return render_template('game-not-found.html'),404
-    if player not in ["w","b"]:
-        return 'Player must be w or b', 404
     player = player.lower()
+    if game == None:
+        return redirect("/")
+    if player not in ["w","b","w-b"]:
+        return 'Player must be w or b or w-b', 404
     pieces = game.chess_board.pieces
+    player_name = {"w":"White","b":"Black","w-b":"Game"}[player.lower()]
     selected_square = [game.selected_square["file"],game.selected_square["rank"]]
-    return render_template('game.html', pieces = location_to_piece_id_list(pieces), field_to_color = field_to_color, player=player, is_turn = game.chess_board.current_Player.color == player, selected_square = selected_square, game_id = game_id)
+    return render_template('game.html', pieces = location_to_piece_id_list(pieces), field_to_color = field_to_color, player=player, player_name = player_name, is_turn = game.chess_board.current_Player.color == player, selected_square = selected_square, game_id = game_id)
 
 
 
@@ -124,7 +131,7 @@ def handle_click(game_id):
     piece_on_pos = game.chess_board.get_piece_on_position(pos)
     
     if game is not None:
-        if game.next_move_notation is not "" and (piece_on_pos is None or (piece_on_pos is not None and piece_on_pos.color != game.chess_board.current_Player.color)):
+        if game.next_move_notation != "" and (piece_on_pos is None or (piece_on_pos is not None and piece_on_pos.color != game.chess_board.current_Player.color)):
             game.next_move_notation += "-"+position_to_notation(f,r)+p
             print(game.next_move_notation)
             game.make_a_move()
@@ -139,6 +146,14 @@ def handle_click(game_id):
     return "", 200
 
 
+@app.route('/new/<mode>')
+def create_game(mode):
+    new_game = Game()
+    if mode in ["w","w-b"]:
+        return redirect(f"/{new_game.game_id}/{mode}")
+    return redirect(f"/{new_game.game_id}/w")
+
+
 @socketio.on('join_game')
 def join_game(game_id):
     join_room(game_id)
@@ -148,6 +163,4 @@ def join_game(game_id):
 
 
 if __name__ == '__main__':
-    test_game = Game()
-    print(test_game.game_id)
-    socketio.run(app)
+    socketio.run(app,debug=True)

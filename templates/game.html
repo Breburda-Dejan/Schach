@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Schach</title>
-    <link rel="stylesheet" href="../static/style.css">
+    <title>Schach - Game</title>
+    <link rel="stylesheet" href="../static/game.css">
 </head>
 <body>
     <div class="game_field">
@@ -11,7 +11,7 @@
             {% for r in range(8) %}
             <tr>
                 {% for f in range(8) %}
-                {% if player == 'w' %}
+                {% if player == 'w' or player == 'w-b' %}
                 <td style="{{ field_to_color[f+1][8-r] }}" id="{{f+1}},{{8-r}}" class="square"></td>
                 {% else %}
                 <td style="{{ field_to_color[8-f][r+1] }}" id="{{8-f}},{{r+1}}" class="square"></td>
@@ -34,6 +34,7 @@
     var socket = io();
     var game_id = "{{game_id}}";
     var player = "{{player}}";
+    var player_name = "{{player_name}}"
     var selected_square = []
     var positions = {}
     var can_promote = false;
@@ -41,6 +42,7 @@
     var player_color = "";
     var block_inputs = false;
     socket.emit("join_game",game_id);
+    document.title = `Schach - ${player_name}`
 
     socket.on("reload", (raw_data) => {
         positions = raw_data.positions;
@@ -52,7 +54,7 @@
                 const square = document.getElementById(`${f},${r}`);
                 square.innerHTML = `<img src="../static/pieces/${positions[f][r]}.svg" class="piece" alt="&nbsp;" dragable=True>`;
                 square.onclick = function(){};
-                if (data.turn == player){
+                if (data.turn == player || player == "w-b"){
                     square.onclick = function () {
                         handle_click(f, r);
                     };

@@ -1,0 +1,87 @@
+:root{
+  --main-bg-color: #3b82f6;
+  --main-bg-color-transparent: #2563ebe9;
+
+  --bg-primary: #0a0e27;
+  --bg-secondary: #0f1437;
+
+  --text-primary: #f8fafc;
+
+
+  --button-create-game: #26843b;
+  --button-join-game: #34aac2;
+  --button-local-game: #ee9416;
+}
+
+body{
+  background-color: var(--main-bg-color);
+  color: var(--text-primary);
+}
+
+.container{
+    position: fixed;
+    height:80%;
+    aspect-ratio: 2/1;
+    left: 5%;
+    top: 10%;
+}
+
+.buttons {
+    position: relative;
+    height:90%;
+    aspect-ratio: 1/2;
+    top:5%;
+    left:0%;
+}
+
+
+button{
+    width: 80%;
+    height: 10%;
+    border-radius: 25px;
+    border:2px solid black;
+}
+
+button:hover{
+    transform: scale(1.1);
+    border-left:-5px solid black;
+    border-bottom: -5px solid black;
+    cursor: pointer;
+}
+
+.new-game{
+    position:absolute;
+    top: 25%;
+    left:10%;
+    background-color: var(--button-create-game) ;
+}
+
+.join-game{
+    position:absolute;
+    top: 40%;
+    left:10%;
+    background-color: var(--button-join-game) ;
+}
+
+.local-game{
+    position:absolute;
+    top: 55%;
+    left:10%;
+    background-color: var(--button-local-game) ;
+}
+
+
+.chessboard {
+    position:absolute;
+    height: 90%;
+    aspect-ratio: 1/1;
+    top:5%;
+}
+
+.preview {
+    position: relative;
+    top:-85%;
+    width: 70%;
+    height: 90%;
+    left:25%
+}
