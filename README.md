@@ -1,42 +1,28 @@
 # Chess
 
----
 I thought this was going to be easy, turns out programming chess is way more complicated than i thought.
-
-Well, I will do it anyway. Without using any AI btw.
 
 ---
 ## Installation
 
-1. ```bash
-   git clone https://github.com/Breburda-Dejan/Schach.git
-   ```
-2. That's it, just open the folder and run: `python ui.py`
+1. Download the [latest release](https://github.com/Breburda-Dejan/Schach/releases/latest) ZIP
+2. Unzip the downloaded file
+3. Navigate to the project directory in your terminal
+4. Install dependencies:
+```bash
+   pip install -r requirements.txt
+```
+5. Run the application:
+```bash
+   python app.py
+```
 
 ---
 ## How to play
-> Every piece has its own ID:<br>
-> **W-P**  -> White Pawn <br>
-> **W-N**  -> White Knight <br>
-> **W-B**  -> White Bishop <br>
-> **W-R**  -> White Rook <br>
-> **W-Q**  -> White Queen <br>
-> **W-K**  -> White King
-> 
-> Black pieces use the same IDs, with `W` replaced by `B`: **B-P, B-N, ...**
+1. Open `127.0.0.1:5000`
+2. Play
 
-> To move the pawn from `e2` to `e4`, type: **e2-e4**
-> 
-> You can also castle by typing: <br>
-> **o-o**  -> short castle<br>
-> **o-o-o** -> long castlery valid position 
-> 
-> If you want to promote a pawn, type the normal move notation (`e7-e8`)
-> and the Piece-ID you want to promote to at the end:<br>
-> `e7-e8 W-Q` -> Promotes the pawn on e7 to a White Queen and then places it on e8.
-
-
----
+<!--
 ## Commands
 I implemented a few commands for debugging and testing:
 
@@ -107,5 +93,5 @@ Piece on the target square.
   - [x] Check for draw by insufficient material
   - [x] Check for draw by being unable to move
   - [x] Check for draw by repetition
-
+-->
   
