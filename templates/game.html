@@ -12,9 +12,9 @@
             <tr>
                 {% for f in range(8) %}
                 {% if player == 'w' or player == 'w-b' %}
-                <td style="{{ field_to_color[f+1][8-r] }}" id="{{f+1}},{{8-r}}" class="square"></td>
+                <td class="square {{ field_to_color[f+1][8-r] }}" id="{{f+1}},{{8-r}}"></td>
                 {% else %}
-                <td style="{{ field_to_color[8-f][r+1] }}" id="{{8-f}},{{r+1}}" class="square"></td>
+                <td class="square {{ field_to_color[8-f][r+1] }}" id="{{8-f}},{{r+1}}"></td>
                 {% endif %}
                 {% endfor %}
             </tr>
@@ -49,10 +49,16 @@
         const data = raw_data.data;
         selected_square[0]=data.selected_square.file;
         selected_square[1]=data.selected_square.rank;
+        last_start_square = data.last_move[0];
+        last_end_square = data.last_move[1];
         for (let f = 1; f<=8; f++){
             for (let r = 1; r<=8; r++){
                 const square = document.getElementById(`${f},${r}`);
-                square.innerHTML = `<img src="../static/pieces/${positions[f][r]}.svg" class="piece" alt="&nbsp;" dragable=True>`;
+                square.innerHTML = "";
+                square.classList.remove("highlighted");
+                if (positions[f][r] != ""){
+                    square.innerHTML = `<img src="../static/pieces/${positions[f][r]}.svg" class="piece" alt="&nbsp;" dragable=True>`;
+                }
                 square.onclick = function(){};
                 if (data.turn == player || player == "w-b"){
                     square.onclick = function () {
@@ -64,6 +70,10 @@
                     if (data.valid_moves.includes(`${f},${r}`)){
                         square.innerHTML += `<div class="valid"></div>`
                     };
+                }
+                if ((last_start_square.rank == r && last_start_square.file == f) || (last_end_square.rank == r && last_end_square.file == f)){
+                    console.log("highlight "+f+","+r)
+                    square.innerHTML += `<div class="highlighted"></div>`;
                 }
             }
         }

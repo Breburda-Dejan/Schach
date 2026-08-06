@@ -1,5 +1,5 @@
 :root{
-  --main-bg-color: #341d06;
+  --main-bg-color: rgb(100,201,171);
   --main-bg-color-transparent: #2563ebe9;
 
   --bg-primary: #0a0e27;
@@ -20,7 +20,7 @@ body{
 
 .container{
     position: fixed;
-    height:80%;
+    height: 80%;
     aspect-ratio: 2/1;
     left: 5%;
     top: 10%;

@@ -1,9 +1,9 @@
+from __future__ import annotations
 import glob
 import pickle
 import re
 from collections import Counter
 from ui import Piece, Player, ChessBoard, INITIAL_PIECE_POSITION, PIECE_IDS
-from __future__ import annotations
 
 
 def load_position_from_file(game: ChessBoard,positions_from_file) -> list[Piece]:
@@ -313,7 +313,6 @@ def exec_cmd(cmd: str,game: ChessBoard):
         print("Game Reset!")
 
 
-
 def string_to_bool(string:str) -> bool:
     if string.lower().startswith("f") or (string.isnumeric() and int(string) == 0):
         return False
@@ -432,7 +431,7 @@ def pawn(pawn: Piece, pieces: list[Piece]) -> list[dict[str, int]]:
 
 
         en_passant_chek_pawn = pos_to_piece_map.get(key_en_passant)
-        if not en_passant_chek_pawn == None:
+        if not en_passant_chek_pawn == None and en_passant_chek_pawn.type.lower() == "pawn":
             if (en_passant_chek_pawn.en_passant_able_on_count + 1 == pawn.game.count and
                 en_passant_chek_pawn.color != pawn.color):
                 dumb_pawn_moves.append(temp_pos)

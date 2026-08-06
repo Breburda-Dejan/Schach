@@ -1,9 +1,10 @@
+from __future__ import annotations
 from flask import Flask, render_template, request, session, redirect, url_for
 from flask_socketio import SocketIO, send, emit, join_room, leave_room,rooms
 from dotenv import load_dotenv
 import requests, os
 from ui import ChessBoard,Piece
-from __future__ import annotations
+import logicEngine as LE
 
 list_of_games:dict[str,Game] = {}
 
@@ -49,11 +50,12 @@ class Game:
             return 93
 
     def make_a_move(self):
-        outcome,player = self.chess_board.gui_input(self.next_move_notation)
+        return_code,outcome,player = self.chess_board.gui_input(self.next_move_notation)
         if outcome != "n":
             socketio.emit("gameOutcome",{"result":outcome,"player":player},to=self.game_id)
             list_of_games.pop(self.game_id)
-        self.last_move_notation = self.next_move_notation
+        if return_code == 0:
+            self.last_move_notation = self.next_move_notation
         self.next_move_notation = ""
         self.selected_square = {"file":-1,"rank":-1}
         self.reload_gui()
@@ -62,6 +64,7 @@ class Game:
     def reload_gui(self):
         valid_moves = []
         valid_moves_raw = []
+        last_move = [{"file":-1,"rank":-1},{"file":-1,"rank":-1}]
         if self.selected_square != {"file":-1,"rank":-1}:
             piece = self.chess_board.get_piece_on_position(self.selected_square)
             if piece is not None:
@@ -71,10 +74,21 @@ class Game:
         if len(valid_moves_raw) > 0:
             valid_moves = [f"{pos["file"]},{pos["rank"]}" for pos in valid_moves_raw]
 
+
+        if self.last_move_notation != "":
+            move = self.last_move_notation[:5].strip()
+            start = move[:2]
+            end = move[3:]
+            start_pos = LE.map_notation_to_move(start)
+            end_pos = LE.map_notation_to_move(end)
+            last_move = [start_pos,end_pos]
+
+
         data = {
             "turn":self.chess_board.current_Player.color,
             "selected_square":self.selected_square,
-            "valid_moves": valid_moves
+            "valid_moves": valid_moves,
+            "last_move": last_move
         }
         socketio.emit("reload",{ "positions":location_to_piece_id_list(self.chess_board.pieces),"data": data}, to=self.game_id)
             
@@ -85,7 +99,7 @@ for file in range(8):
     if 8-file not in list(field_to_color.keys()):
         field_to_color[8-file] = {}
     for rank in range(8):
-        field_to_color[8-file][rank+1] = f"background-color:{('white','gray')[ChessBoard.get_color_of_square({"file":8-file,"rank":rank+1}) == "b"]}"
+        field_to_color[8-file][rank+1] = f"{('light_square','dark_square')[ChessBoard.get_color_of_square({"file":8-file,"rank":rank+1}) == "b"]}"
 
 def location_to_piece_id_list(pieces:list[Piece]):
     pos_to_piece_id = {}
@@ -208,4 +222,4 @@ def join_game(data):
 
 
 if __name__ == '__main__':
-    socketio.run(app,debug=True)
+    socketio.run(app)
