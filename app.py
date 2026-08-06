@@ -65,6 +65,7 @@ class Game:
         valid_moves = []
         valid_moves_raw = []
         last_move = [{"file":-1,"rank":-1},{"file":-1,"rank":-1}]
+        pos_of_check = {"file":-1,"rank":-1}
         if self.selected_square != {"file":-1,"rank":-1}:
             piece = self.chess_board.get_piece_on_position(self.selected_square)
             if piece is not None:
@@ -83,12 +84,20 @@ class Game:
             end_pos = LE.map_notation_to_move(end)
             last_move = [start_pos,end_pos]
 
+        if self.chess_board.player1.is_in_check:
+            print("p1 in check")
+            pos_of_check = self.chess_board.player1.king.position
+        elif self.chess_board.player2.is_in_check:
+            print("p2 in check")
+            pos_of_check = self.chess_board.player2.king.position
+
 
         data = {
             "turn":self.chess_board.current_Player.color,
             "selected_square":self.selected_square,
             "valid_moves": valid_moves,
-            "last_move": last_move
+            "last_move": last_move,
+            "in_check_square": pos_of_check
         }
         socketio.emit("reload",{ "positions":location_to_piece_id_list(self.chess_board.pieces),"data": data}, to=self.game_id)
             

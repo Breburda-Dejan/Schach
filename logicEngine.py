@@ -882,6 +882,7 @@ def calculate_valid_moves(pieces: list[Piece], piece_to_move: Piece, player: Pla
     valid_moves = clean_moves(valid_moves).copy()
 
     ### CHECK FOR CHECKS OR WAYS TO BLOCK CHECKS ...
+    player.is_in_check,_ = is_my_king_in_check(player.king,pieces,player)
     for move in valid_moves:
         if would_be_check_after_move(pieces, player, piece_to_move, move)[0]:
             blocked_moves.append(move)
