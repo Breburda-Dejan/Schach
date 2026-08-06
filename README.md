@@ -12,10 +12,19 @@ I thought this was going to be easy, turns out programming chess is way more com
 ```bash
    pip install -r requirements.txt
 ```
-5. Run the application:
+5. Create `.env` file -> `SECRET_KEY=`***`your secret key`***
+6. Run the application:
 ```bash
    python app.py
 ```
+
+## Quick Installation
+
+### Linux:
+> install.sh
+
+### Windows:
+> install.bat
 
 ---
 ## How to play

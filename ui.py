@@ -5,6 +5,7 @@
 #   Breburda Dejan
 #####################################################################################
 
+from __future__ import annotations
 from errors import error_lookup
 
 settings = {

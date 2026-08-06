@@ -3,6 +3,7 @@ import pickle
 import re
 from collections import Counter
 from ui import Piece, Player, ChessBoard, INITIAL_PIECE_POSITION, PIECE_IDS
+from __future__ import annotations
 
 
 def load_position_from_file(game: ChessBoard,positions_from_file) -> list[Piece]:

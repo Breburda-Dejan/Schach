@@ -1,14 +1,18 @@
 from flask import Flask, render_template, request, session, redirect, url_for
 from flask_socketio import SocketIO, send, emit, join_room, leave_room,rooms
-import requests
+from dotenv import load_dotenv
+import requests, os
 from ui import ChessBoard,Piece
+from __future__ import annotations
 
 list_of_games:dict[str,Game] = {}
 
 open_groups:dict[str,list[str]] = {}
 
+load_dotenv()
+
 app = Flask(__name__)
-app.secret_key = "IDK BRO"
+app.secret_key = os.environ["SECRET_KEY"]
 socketio = SocketIO(app,ping_timeout=60,ping_interval = 10)
 
 
