@@ -303,6 +303,8 @@ def check_for_games_with_0_player():
                 print("ye. lets delete...")
                 del list_of_games[game_id]
                 list_of_games.pop(game_id,None)
+                with open_groups_lock:
+                    open_groups.pop(game_id)
             else:
                 print("nah, its to early")
 
