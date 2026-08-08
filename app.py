@@ -142,9 +142,12 @@ def start_screen():
 
 @app.route('/<game_id>/<player>', methods=['GET','POST'])
 def game_view(game_id, player):
+    print(game_id)
+    print(player)
     game = list_of_games.get(game_id)
     player = player.lower()
     if game == None:
+        print("lets go back")
         return redirect("/")
     if player not in ["w","b","w-b"]:
         return 'Player must be w or b or w-b', 404
@@ -206,8 +209,37 @@ def create_game():
 
 @app.route('/available_games',methods=['GET'])
 def available_games():
-    game_ids_to_name  = [{"id":id,"name":g.game_name} for id,g in list_of_games.items()]
+    game_ids_to_name  = []
+    with open_groups_lock:
+        snapshot = open_groups.copy()
+
+    for game_id, game in snapshot.items():
+        full = [False,False]
+        for i,color in enumerate(["w","b"]):
+            full[i] = any([c.get("color").lower().__contains__(color) or color.__contains__(c.get("color").lower()) for c in open_groups[game_id].values() if type(c) == dict])
+        if not all(full):
+            game_ids_to_name.append({"id":game_id,"name":list_of_games[game_id].game_name})    
+
+        
     return game_ids_to_name
+
+
+@app.route('/join/<game_id>',methods=['GET'])
+def join(game_id):
+    print("-_"*30)
+    print(game_id)
+    with open_groups_lock:
+        for color in ["w","b"]:
+            print(color)
+            print(open_groups)
+            if any([c.get("color").lower().__contains__(color) or color.__contains__(c.get("color").lower()) for c in open_groups[game_id].values() if type(c) == dict]):
+                print("continue")
+                continue
+            print("redirect to game view")
+            return jsonify({"redirect":f"/{game_id}/{color}"})
+
+    return redirect("/")
+
 
 
 @socketio.on('disconnect')
@@ -224,19 +256,25 @@ def on_disconnect():
 @socketio.on('join_game')
 def join_game(data):
     game_id = data["game_id"]
-    color = data["color"]
+    choosen_color = data.get("color")
     game = list_of_games.get(game_id)
     sid = request.sid
     if game is not None:
         with open_groups_lock:
             if game_id not in open_groups.keys():
                 open_groups[game_id] = {"last-seen":0}
-            if color in [c.get("color") for c in open_groups[game_id].values() if type(c) == dict] and open_groups[game_id].get(sid).get("color") != color:
+            for color in [[choosen_color],["w","b"]][choosen_color == None]:
+                print(color)
+                print(open_groups)
+                if any([c.get("color").lower().__contains__(color) or color.__contains__(c.get("color").lower()) for c in open_groups[game_id].values() if type(c) == dict]) and open_groups[game_id].get(sid,{"color":""}).get("color") != color:
+                    print("continue")
+                    continue
+                print("thats fine")
+                open_groups[game_id][sid] = {"color":color}
+                open_groups[game_id]["last-seen"] = current_milli_time()
+                join_room(game_id)
+                game.reload_gui()
                 return
-            open_groups[game_id][sid] = {"color":color}
-            open_groups[game_id]["last-seen"] = current_milli_time()
-            join_room(game_id)
-            game.reload_gui()
 
 
 @socketio.on('heart_beat')
@@ -274,4 +312,4 @@ if __name__ == '__main__':
     scheduler = BackgroundScheduler()
     scheduler.add_job(check_for_games_with_0_player,"interval",minutes=10)
     scheduler.start()
-    socketio.run(app)
+    socketio.run(app,port=5808)

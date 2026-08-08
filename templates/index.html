@@ -62,7 +62,15 @@
     }
 
     function join(id){
-        window.location.href = `/${id}/b`
+        fetch(`/join/${id}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(res => res.json())
+        .then(data => {
+            window.location.href = data.redirect;
+        });
     }
 
     function create(mode){
