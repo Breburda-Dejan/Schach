@@ -9,9 +9,9 @@
 <body>
     <div class="container">
         <div class="buttons">
-            <button class="new-game" id="create" onclick="window.location.href = '/new/w'">Create Game</button>
-            <button class="join-game" id="join" onclick="show_available()">Join Game</button>
-            <button class="local-game" id="local" onclick="window.location.href = '/new/w-b'">Local Game</button>
+            <button class="new-game" id="create" >Create Game</button>
+            <button class="join-game" id="join" >Join Game</button>
+            <button class="local-game" id="local" onclick="create('w-b')">Local Game</button>
         </div>
         <div class="available-games hidden" id="available-games">
             <table id="button-area">
@@ -22,8 +22,24 @@
             <img class="chessboard" src="../static/images/chessboard2.png" alt="">
         </div>
     </div>
+    <div class="create_game_form hidden" id="create_game_form">
+        <form method="GET" action="/create-game">
+            <label for="game-name">Name:</label>
+            <input type="text" id="game-name" name="name" value="Game-Name"><br>
+            <p>What player do you want to be?</p>
+            <input type="radio" id="white" name="player" value="White" checked>
+            <label for="white">White</label>
+            <input type="radio" id="black" name="player" value="Black">
+            <label for="black">Black</label><br><br>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
 </body>
 <script>
+
+    const create_button = document.getElementById("create");
+    const join_button = document.getElementById("join");
+    const create_form = document.getElementById("create_game_form")
 
     async function show_available(){
         document.getElementById("chessboard").classList.toggle("move-over");
@@ -41,7 +57,7 @@
         const json = await response.json();
         console.log(json)
         json.forEach(element => {
-           games_list.innerHTML += `<tr><td><button class="join-button" onclick="join('${element}')">${element}</button></td></tr>`;
+           games_list.innerHTML += `<tr><td><button class="join-button" onclick="join('${element.id}')">${element.name}</button></td></tr>`;
         });
     }
 
@@ -49,6 +65,42 @@
         window.location.href = `/${id}/b`
     }
 
+    function create(mode){
+        fetch(`/new/${mode}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body:JSON.stringify({'name':"Local-Game"})
+        }).then(res => res.json())
+        .then(data => {
+            window.location.href = data.redirect;
+        });
+    }
+
+    function show_create(){
+        create_form.classList.toggle("hidden");
+    }
+
+    create_button.addEventListener("click",function(event){
+        event.stopPropagation();
+        show_create();
+    });
+
+    join_button.addEventListener("click",function(event){
+        event.stopPropagation();
+        show_available();
+    });
+
+    create_form.addEventListener("click",function(event){
+        event.stopPropagation();
+    });
+
+    document.addEventListener("click",function(){
+        document.getElementById("create_game_form").classList.add("hidden");
+        document.getElementById("chessboard").classList.remove("move-over");
+        document.getElementById("available-games").classList.add("hidden");
+    });
 
 
 </script>

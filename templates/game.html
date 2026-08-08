@@ -99,6 +99,12 @@
 
 
 
+    function heart_beat(){
+        socket.emit("heart_beat");
+    }
+
+
+
     function promote(f, r, c){
         show_promotion_options(c);
         can_promote = true;
@@ -155,5 +161,8 @@
             });
         }
     }
+
+
+    var heart_beat_interval = window.setInterval(heart_beat, 1000);
 </script>
 </html>

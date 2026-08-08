@@ -133,3 +133,26 @@ button:hover{
     transform: scale(0);
     opacity: 0;
 }
+
+
+.create_game_form {
+    display: flex;
+    position: fixed;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    color: black;
+    width: 40%;
+    aspect-ratio: 1/0.5;
+    top: 27.5%;
+    left: 21.5%;
+    z-index: 2000;
+    background-color: rgb(100,201,171,0.6);
+    border: 3px solid gold;
+}
+
+.create_game_form form input{
+    color: white;
+    border-radius: 5px;
+    background-color: gray;
+}

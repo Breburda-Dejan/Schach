@@ -1,14 +1,17 @@
 from __future__ import annotations
-from flask import Flask, render_template, request, session, redirect, url_for
+from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 from flask_socketio import SocketIO, send, emit, join_room, leave_room,rooms
+from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
-import requests, os
+from threading import Lock
+import requests, os, time
 from ui import ChessBoard,Piece
 import logicEngine as LE
 
 list_of_games:dict[str,Game] = {}
 
 open_groups:dict[str,list[str]] = {}
+open_groups_lock = Lock()
 
 load_dotenv()
 
@@ -27,8 +30,9 @@ def game_id_generator():
         return game_id_generator()
 
 class Game:
-    def __init__(self):
+    def __init__(self,name):
         self.game_id = game_id_generator()
+        self.game_name = name
         list_of_games[self.game_id] = self
         self.chess_board:ChessBoard = ChessBoard()
         self.next_move_notation = ""
@@ -136,7 +140,7 @@ def start_screen():
     return render_template("index.html")
 
 
-@app.route('/<game_id>/<player>')
+@app.route('/<game_id>/<player>', methods=['GET','POST'])
 def game_view(game_id, player):
     game = list_of_games.get(game_id)
     player = player.lower()
@@ -181,38 +185,40 @@ def handle_click(game_id):
     return "", 200
 
 
-@app.route('/new/<mode>')
-def create_game(mode):
-    new_game = Game()
-    if mode in ["w","w-b"]:
-        return redirect(f"/{new_game.game_id}/{mode}")
-    return redirect(f"/{new_game.game_id}/w")
+@app.route('/new/<mode>',methods=['POST'])
+def new_game(mode):
+    data = request.get_json()
+    print(data)
+    name = data["name"]
+    print(name)
+    new_game = Game(name)
+    return jsonify({"redirect":f"/{new_game.game_id}/{mode}"})
+
+
+@app.route('/create-game',methods=['GET'])
+def create_game():
+    name = request.args.get("name")
+    mode = ("w","b")[request.args.get("player").lower() == "black"]
+    print(name)
+    new_game = Game(name)
+    return redirect(f"/{new_game.game_id}/{mode}")
 
 
 @app.route('/available_games',methods=['GET'])
 def available_games():
-    games = list(list_of_games.keys())
-    return games
+    game_ids_to_name  = [{"id":id,"name":g.game_name} for id,g in list_of_games.items()]
+    return game_ids_to_name
 
 
 @socketio.on('disconnect')
 def on_disconnect():
     print("-"*20)
-    print("disconnect")
     sid = request.sid
     print(sid)
-    for key, value in open_groups.items():
-        try:
-            value.remove(sid)
-        except ValueError:
-            pass
-        if len(value) == 0 and 0:
-            print("removing game: "+key)
-            print(list_of_games)
-            del list_of_games[key]
-            del open_groups[key]
-            print(list_of_games)
-
+    print("disconnect")
+    with open_groups_lock:
+        for key, value in open_groups.items():
+            value.pop(sid, None)
 
 
 @socketio.on('join_game')
@@ -222,13 +228,50 @@ def join_game(data):
     game = list_of_games.get(game_id)
     sid = request.sid
     if game is not None:
-        if not game_id in list(open_groups.keys()):
-            open_groups[game_id] = []
-        open_groups[game_id].append(sid)
-        join_room(game_id)
-        game.reload_gui()
+        with open_groups_lock:
+            if game_id not in open_groups.keys():
+                open_groups[game_id] = {"last-seen":0}
+            if color in [c.get("color") for c in open_groups[game_id].values() if type(c) == dict] and open_groups[game_id].get(sid).get("color") != color:
+                return
+            open_groups[game_id][sid] = {"color":color}
+            open_groups[game_id]["last-seen"] = current_milli_time()
+            join_room(game_id)
+            game.reload_gui()
+
+
+@socketio.on('heart_beat')
+def heart_neat():
+    sid = request.sid
+    with open_groups_lock:
+        for game in open_groups.values():
+            if sid in game:
+                game["last-seen"] = current_milli_time()
+    
+
+def current_milli_time():
+    return round(time.time() * 1000)
+
+
+def check_for_games_with_0_player():
+    print("checking...")
+    with open_groups_lock:
+        snapshot = open_groups.copy()
+    print(snapshot)
+
+    for game_id,game in open_groups.items():
+        if len(game) <= 1:
+            print("noone is playing that shit...\nCan i delete?")
+            if current_milli_time() >= game["last-seen"] + 30*60*1000:
+                print("ye. lets delete...")
+                del list_of_games[game_id]
+                list_of_games.pop(game_id,None)
+            else:
+                print("nah, its to early")
 
 
 
 if __name__ == '__main__':
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(check_for_games_with_0_player,"interval",minutes=10)
+    scheduler.start()
     socketio.run(app)
