@@ -58,6 +58,8 @@ class Game:
         if outcome != "n":
             socketio.emit("gameOutcome",{"result":outcome,"player":player},to=self.game_id)
             list_of_games.pop(self.game_id)
+            with open_groups_lock:
+                    open_groups.pop(self.game_id)
         if return_code == 0:
             self.last_move_notation = self.next_move_notation
         self.next_move_notation = ""
