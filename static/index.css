@@ -10,6 +10,7 @@
 
   --button-create-game: #26843b;
   --button-join-game: #34aac2;
+  --button-join-game-2: #c0ba4a;
   --button-local-game: #ee9416;
 }
 
@@ -32,6 +33,7 @@ body{
     aspect-ratio: 1/2;
     top:5%;
     left:0%;
+    z-index: 100;
 }
 
 button{
@@ -126,7 +128,7 @@ button:hover{
     left: 10%;
     margin-bottom:5%;
     padding: 5%;
-    background-color: var(--button-join-game);
+    background-color: var(--button-join-game-2);
 }
 
 .hidden {
@@ -155,4 +157,113 @@ button:hover{
     color: white;
     border-radius: 5px;
     background-color: gray;
+}
+
+.create_game_form #submit{
+    width: 100%;
+    background-color: green;
+}
+
+
+
+@media (max-width: 480px){
+    .container{
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        left:0%;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .buttons{
+        top:-10%;
+        width:100%;
+        height: 100%;
+        backdrop-filter: blur(10px);
+        transition: transform 0.4s ease;
+    }
+
+    .chessboard{
+        margin:auto;
+        display:flex;
+        scale:300%;
+        left:-100%;
+        z-index: 90;
+    }
+
+    .preview.move-over{
+        transform: translate(0%);
+    }
+
+    .buttons.move-over{
+        transform: translate(0%,-25%);
+    }
+
+    .available-games {
+        top:35%;
+        width: 100%;
+        height: 60%;
+        left:0%;
+        backdrop-filter: blur(5px);
+        border:none;
+    }
+
+    .create_game_form {
+        left: 0%;
+        width: 99%;
+        height: 30%;
+    }
+}
+
+
+@media (min-width:480px) and (max-width: 1048px){
+    .container{
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        left:0%;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .buttons{
+        top:-10%;
+        left: 15%;
+        width:70%;
+        height: 100%;
+        backdrop-filter: blur(10px);
+        transition: transform 0.4s ease;
+    }
+
+    .chessboard,.preview{
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top:0%;
+        left:0%;
+        z-index: 90;
+    }
+
+    .preview.move-over{
+        transform: translate(0%);
+    }
+
+    .buttons.move-over{
+        transform: translate(-20%);
+    }
+
+    .available-games {
+        position: fixed;
+        top:15%;
+        width: 25%;
+        height: 60%;
+        left:72.5%;
+        backdrop-filter: blur(10px);
+    }
+
+    .create_game_form {
+        width: 60%;
+        height: auto;
+    }
 }

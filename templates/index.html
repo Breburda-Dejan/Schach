@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container">
-        <div class="buttons">
+        <div class="buttons" id="buttons">
             <button class="new-game" id="create" >Create Game</button>
             <button class="join-game" id="join" >Join Game</button>
             <button class="local-game" id="local" onclick="create('w-b')">Local Game</button>
@@ -31,7 +31,7 @@
             <label for="white">White</label>
             <input type="radio" id="black" name="player" value="Black">
             <label for="black">Black</label><br><br>
-            <input type="submit" value="Submit">
+            <input type="submit" value="Create" id="submit">
         </form>
     </div>
 </body>
@@ -43,6 +43,7 @@
 
     async function show_available(){
         document.getElementById("chessboard").classList.toggle("move-over");
+        document.getElementById("buttons").classList.toggle("move-over");
         document.getElementById("available-games").classList.toggle("hidden");
         const games_list = document.getElementById("button-area");
 
@@ -108,6 +109,7 @@
         document.getElementById("create_game_form").classList.add("hidden");
         document.getElementById("chessboard").classList.remove("move-over");
         document.getElementById("available-games").classList.add("hidden");
+        document.getElementById("buttons").classList.remove("move-over");
     });
 
 

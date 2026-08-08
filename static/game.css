@@ -151,3 +151,21 @@ tr {
   border-radius:50%;
   background-color: rgba(76, 76, 76, 0.629);
 }
+
+
+
+@media (max-width: 1000px){
+
+  .game_field {
+    width: 80%;
+    aspect-ratio: 1/1;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+  }
+
+  .board {
+    position: absolute;
+    width: 100%;
+  }
+}
